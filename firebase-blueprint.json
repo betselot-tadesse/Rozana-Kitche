@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A food item in the menu",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the dish" },
+        "desc": { "type": "string", "description": "Description of the dish" },
+        "img": { "type": "string", "description": "Image URL" },
+        "price": { "type": "string", "description": "Price with currency" },
+        "rating": { "type": "number", "description": "Star rating" },
+        "order": { "type": "integer", "description": "Display order" }
+      },
+      "required": ["name", "desc", "img", "price", "rating"]
+    },
+    "SliderImage": {
+      "title": "Slider Image",
+      "description": "An image for the hero slider",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "description": "Image URL" },
+        "order": { "type": "integer", "description": "Display order" }
+      },
+      "required": ["url"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      }
+    },
+    "SocialLink": {
+      "title": "Social Link",
+      "description": "A social media profile link",
+      "type": "object",
+      "properties": {
+        "platform": { "type": "string", "enum": ["facebook", "instagram", "twitter", "youtube", "linkedin"], "description": "Social media platform" },
+        "url": { "type": "string", "description": "URL to the profile" },
+        "order": { "type": "integer", "description": "Display order" }
+      },
+      "required": ["platform", "url"]
+    }
+  },
+  "firestore": {
+    "menu": {
+      "schema": "MenuItem",
+      "description": "Collection of menu items"
+    },
+    "slider": {
+      "schema": "SliderImage",
+      "description": "Collection of hero slider images"
+    },
+    "users": {
+      "schema": "User",
+      "description": "User roles and profiles"
+    },
+    "social": {
+      "schema": "SocialLink",
+      "description": "Collection of social media links"
+    }
+  }
+}

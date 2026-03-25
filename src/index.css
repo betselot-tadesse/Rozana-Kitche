@@ -17,3 +17,9 @@
     @apply bg-brand-bg text-[#1d1d1f] antialiased;
   }
 }
+
+@layer components {
+  .admin-input {
+    @apply w-full px-4 py-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-primary transition-all outline-none text-sm;
+  }
+}

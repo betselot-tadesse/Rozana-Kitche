@@ -4,8 +4,13 @@
  */
 
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, ChevronRight, ChevronDown, Star, Clock, Utensils, Heart, Quote, Mail, Phone, MapPin } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Menu, X, ChevronRight, ChevronDown, Star, Clock, Utensils, Heart, Quote, Mail, Phone, MapPin, Plus, Trash2, Edit2, LogIn, LogOut, Settings, Save, Image as ImageIcon, Share2, Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
+import { 
+  auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, addDoc, serverTimestamp 
+} from "./firebase";
 
 const Logo = ({ className = "", light = false }) => (
   <div className={`inline-flex flex-col items-center justify-center leading-none ${className}`}>
@@ -24,22 +29,39 @@ const Logo = ({ className = "", light = false }) => (
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
+  const navLinks = isHomePage ? [
+    { name: "Menu", href: "#menu" },
+    { name: "About", href: "#about" },
+    { name: "Order Now", href: "#order", cta: true }
+  ] : [
+    { name: "Home", href: "/" },
+  ];
 
   return (
     <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-black/5">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <a href="#" className="flex items-center">
+        <Link to="/" className="flex items-center">
           <Logo className="scale-75 md:scale-100 origin-left" />
-        </a>
+        </Link>
         
         {/* Desktop Links */}
         <div className="hidden md:flex items-center space-x-8">
-          <a href="#menu" className="text-sm font-medium hover:text-brand-primary transition-colors">Menu</a>
-          <a href="#about" className="text-sm font-medium hover:text-brand-primary transition-colors">About</a>
-          {/* <a href="#contact" className="text-sm font-medium hover:text-brand-primary transition-colors">Contact</a> */}
-          <a href="#order" className="bg-brand-dark text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-brand-primary transition-all shadow-md">
-            Order Now
-          </a>
+          {navLinks.map((link) => (
+            link.cta ? (
+              <a key={link.name} href={link.href} className="bg-brand-dark text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-brand-primary transition-all shadow-md">
+                {link.name}
+              </a>
+            ) : (
+              link.href.startsWith("#") ? (
+                <a key={link.name} href={link.href} className="text-sm font-medium hover:text-brand-primary transition-colors">{link.name}</a>
+              ) : (
+                <Link key={link.name} to={link.href} className="text-sm font-medium hover:text-brand-primary transition-colors">{link.name}</Link>
+              )
+            )
+          ))}
         </div>
 
         {/* Mobile Toggle */}
@@ -58,12 +80,19 @@ const Navbar = () => {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="md:hidden bg-white border-b border-black/5 px-6 py-4 flex flex-col space-y-4 overflow-hidden"
           >
-            <a href="#menu" onClick={() => setIsOpen(false)} className="text-lg font-medium">Menu</a>
-            <a href="#about" onClick={() => setIsOpen(false)} className="text-lg font-medium">About</a>
-            {/* <a href="#contact" onClick={() => setIsOpen(false)} className="text-lg font-medium">Contact</a> */}
-            <a href="#order" onClick={() => setIsOpen(false)} className="bg-brand-dark text-white px-6 py-3 rounded-xl text-center font-medium">
-              Order Now
-            </a>
+            {navLinks.map((link) => (
+              link.cta ? (
+                <a key={link.name} href={link.href} onClick={() => setIsOpen(false)} className="bg-brand-dark text-white px-6 py-3 rounded-xl text-center font-medium">
+                  {link.name}
+                </a>
+              ) : (
+                link.href.startsWith("#") ? (
+                  <a key={link.name} href={link.href} onClick={() => setIsOpen(false)} className="text-lg font-medium">{link.name}</a>
+                ) : (
+                  <Link key={link.name} to={link.href} onClick={() => setIsOpen(false)} className="text-lg font-medium">{link.name}</Link>
+                )
+              )
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
@@ -75,18 +104,42 @@ const Hero = () => {
   const languages = [
     { text: "Rozana", lang: "English" },
     { text: "रोज़ाना", lang: "Hindi" },
-    { text: "روزانا", lang: "Arabic" },
+    { text: "روزाना", lang: "Arabic" },
     { text: "ਰੋਜ਼ਾਨਾ", lang: "Punjabi" }
   ];
 
+  const [sliderImages, setSliderImages] = useState<string[]>([
+    "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=1200&q=80"
+  ]);
+
   const [langIndex, setLangIndex] = useState(0);
+  const [sliderIndex, setSliderIndex] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const unsubscribe = onSnapshot(query(collection(db, "slider"), orderBy("order", "asc")), (snapshot) => {
+      if (!snapshot.empty) {
+        const images = snapshot.docs.map(doc => doc.data().url);
+        setSliderImages(images);
+      }
+    });
+
+    const langInterval = setInterval(() => {
       setLangIndex((prev) => (prev + 1) % languages.length);
     }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+    
+    const sliderInterval = setInterval(() => {
+      setSliderIndex((prev) => (prev + 1) % sliderImages.length);
+    }, 5000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(langInterval);
+      clearInterval(sliderInterval);
+    };
+  }, [sliderImages.length]);
 
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-gradient-to-br from-[#0f3d2c] to-[#2f7d4f]">
@@ -158,27 +211,35 @@ const Hero = () => {
           </div>
         </motion.div>
 
-        <div className="relative h-[500px] w-full">
+        <div className="relative h-[400px] md:h-[500px] w-full">
           <div className="absolute -inset-4 bg-white/10 rounded-3xl blur-2xl -z-10"></div>
-          <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-white/10 relative bg-brand-dark/50 flex items-center justify-center">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline
-              className="w-full h-full object-cover"
-              poster="https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80"
-            >
-              {/* Replace 'hero-video.mp4' with your uploaded video file */}
-              <source src="/hero-video.mp4" type="video/mp4" />
-              <source src="https://player.vimeo.com/external/370331493.sd.mp4?s=7b0cd519d76097c4f5d7b1021000e4418e4f0273&profile_id=164&oauth2_token_id=57447761" type="video/mp4" />
-            </video>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+          <div className="w-full h-full rounded-3xl overflow-hidden shadow-2xl border-4 border-white/10 relative bg-brand-dark/50">
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={sliderIndex}
+                src={sliderImages[sliderIndex]}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                className="w-full h-full object-cover"
+                alt="Delicious North Indian Food"
+                referrerPolicy="no-referrer"
+              />
+            </AnimatePresence>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
             
-            {/* Instruction overlay for the user (only visible if video fails or as a hint) */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center opacity-0 hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm">
-              <Utensils className="text-white mb-4" size={48} />
-              <p className="text-white font-bold">Upload 'hero-video.mp4' to the root folder to replace this placeholder</p>
+            {/* Slider Indicators */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+              {sliderImages.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSliderIndex(i)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    sliderIndex === i ? "bg-white w-6" : "bg-white/40"
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -270,12 +331,15 @@ const MenuCard = ({ item, index }: any) => {
       </div>
       <div className="p-6 flex-1 flex flex-col">
         <div className="flex items-center gap-1 text-amber-500 mb-2">
-          <Star size={14} fill="currentColor" />
-          <Star size={14} fill="currentColor" />
-          <Star size={14} fill="currentColor" />
-          <Star size={14} fill="currentColor" />
-          <Star size={14} fill="currentColor" />
-          <span className="text-xs text-gray-400 ml-1">(4.9)</span>
+          {[...Array(5)].map((_, i) => (
+            <Star 
+              key={i} 
+              size={14} 
+              fill={i < Math.floor(item.rating) ? "currentColor" : "none"} 
+              className={i < Math.floor(item.rating) ? "" : "text-gray-300"}
+            />
+          ))}
+          <span className="text-xs text-gray-400 ml-1">({item.rating.toFixed(1)})</span>
         </div>
         <h3 className="text-xl font-bold mb-2 text-brand-dark">{item.name}</h3>
         
@@ -311,26 +375,39 @@ const MenuCard = ({ item, index }: any) => {
 };
 
 const MenuSection = () => {
-  const items = [
+  const [items, setItems] = useState<any[]>([
     {
       name: "Chicken Biryani",
       desc: "Fragrant long-grain basmati rice layered with succulent pieces of spiced chicken, slow-cooked to perfection with caramelized onions, fresh mint, and a secret blend of aromatic spices. Served with cooling raita and spicy salan.",
       img: "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a",
-      price: "₹249"
+      price: "AED 35",
+      rating: 4.2
     },
     {
       name: "Butter Chicken",
       desc: "Our signature dish featuring tender tandoori-grilled chicken pieces simmered in a rich, velvety tomato and butter gravy. Infused with dried fenugreek leaves and finished with a dollop of fresh cream for that authentic home-style indulgence.",
       img: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398",
-      price: "₹289"
+      price: "AED 38",
+      rating: 4.5
     },
     {
       name: "Chicken Thali",
       desc: "A complete, balanced comfort meal that brings the variety of an Indian home kitchen to your plate. Includes a hearty chicken curry, yellow dal tadka, steamed basmati rice, two handmade rotis, fresh garden salad, and a sweet treat of the day.",
       img: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976",
-      price: "₹329"
+      price: "AED 45",
+      rating: 5.0
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(query(collection(db, "menu"), orderBy("order", "asc")), (snapshot) => {
+      if (!snapshot.empty) {
+        const menuItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setItems(menuItems);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <section id="menu" className="py-24 bg-brand-bg">
@@ -734,6 +811,15 @@ const CTA = () => {
 // };
 
 const Footer = () => {
+  const [socialLinks, setSocialLinks] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(query(collection(db, "social"), orderBy("order", "asc")), (snap) => {
+      setSocialLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
   return (
     <footer className="bg-[#111] text-gray-400 py-16">
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-12">
@@ -755,9 +841,34 @@ const Footer = () => {
         <div>
           <h4 className="text-white font-bold mb-6">Follow Us</h4>
           <ul className="space-y-4">
-            <li><a href="#" className="hover:text-white transition-colors">Instagram</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Facebook</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
+            {socialLinks.length > 0 ? (
+              socialLinks.map(link => (
+                <li key={link.id}>
+                  <a 
+                    href={link.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center gap-3 hover:text-white transition-colors group"
+                  >
+                    <span className="text-gray-500 group-hover:text-brand-primary transition-colors">
+                      {link.platform === 'facebook' && <Facebook size={18} />}
+                      {link.platform === 'instagram' && <Instagram size={18} />}
+                      {link.platform === 'twitter' && <Twitter size={18} />}
+                      {link.platform === 'youtube' && <Youtube size={18} />}
+                      {link.platform === 'linkedin' && <Linkedin size={18} />}
+                    </span>
+                    <span className="capitalize">{link.platform}</span>
+                  </a>
+                </li>
+              ))
+            ) : (
+              <>
+                <li><a href="#" className="hover:text-white transition-colors">Instagram</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Facebook</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
+              </>
+            )}
+            <li><Link to="/admin" className="hover:text-white transition-colors">Login</Link></li>
           </ul>
         </div>
       </div>
@@ -768,18 +879,513 @@ const Footer = () => {
   );
 };
 
+const AdminPanel = () => {
+  const [activeTab, setActiveTab] = useState<"menu" | "slider" | "social">("menu");
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [sliderImages, setSliderImages] = useState<any[]>([]);
+  const [socialLinks, setSocialLinks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginError, setLoginError] = useState("");
+  const navigate = useNavigate();
+
+  // Form states
+  const [newItem, setNewItem] = useState({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
+  const [newSlide, setNewSlide] = useState({ url: "", order: 0 });
+  const [newSocial, setNewSocial] = useState({ platform: "facebook", url: "", order: 0 });
+  
+  // Edit states
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const menuFileRef = useRef<HTMLInputElement>(null);
+  const sliderFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const savedLogin = localStorage.getItem("rozana_admin_logged_in");
+    if (savedLogin === "true") {
+      setIsLoggedIn(true);
+    }
+
+    const unsubMenu = onSnapshot(query(collection(db, "menu"), orderBy("order", "asc")), (snap) => {
+      setMenuItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    const unsubSlider = onSnapshot(query(collection(db, "slider"), orderBy("order", "asc")), (snap) => {
+      setSliderImages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    const unsubSocial = onSnapshot(query(collection(db, "social"), orderBy("order", "asc")), (snap) => {
+      setSocialLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => { unsubMenu(); unsubSlider(); unsubSocial(); };
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginForm.username === "rozana" && loginForm.password === "1061") {
+      setIsLoggedIn(true);
+      localStorage.setItem("rozana_admin_logged_in", "true");
+      setLoginError("");
+    } else {
+      setLoginError("Invalid username or password");
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem("rozana_admin_logged_in");
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "menu" | "slider") => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        alert("File too large! Please upload an image smaller than 1MB.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        if (type === "menu") {
+          setNewItem({ ...newItem, img: base64String });
+        } else {
+          setNewSlide({ ...newSlide, url: base64String });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddMenuItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newItem.img) {
+      alert("Please upload an image first!");
+      return;
+    }
+    setLoading(true);
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, "menu", editingId), { ...newItem, rating: Number(newItem.rating), order: Number(newItem.order) });
+        setEditingId(null);
+      } else {
+        await addDoc(collection(db, "menu"), { ...newItem, rating: Number(newItem.rating), order: Number(newItem.order) });
+      }
+      setNewItem({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
+      if (menuFileRef.current) menuFileRef.current.value = "";
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const handleAddSlide = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSlide.url) {
+      alert("Please upload an image first!");
+      return;
+    }
+    setLoading(true);
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, "slider", editingId), { ...newSlide, order: Number(newSlide.order) });
+        setEditingId(null);
+      } else {
+        await addDoc(collection(db, "slider"), { ...newSlide, order: Number(newSlide.order) });
+      }
+      setNewSlide({ url: "", order: 0 });
+      if (sliderFileRef.current) sliderFileRef.current.value = "";
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const handleAddSocial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSocial.url) {
+      alert("Please enter a URL!");
+      return;
+    }
+    setLoading(true);
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, "social", editingId), { ...newSocial, order: Number(newSocial.order) });
+        setEditingId(null);
+      } else {
+        await addDoc(collection(db, "social"), { ...newSocial, order: Number(newSocial.order) });
+      }
+      setNewSocial({ platform: "facebook", url: "", order: 0 });
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const startEdit = (type: "menu" | "slider" | "social", item: any) => {
+    setEditingId(item.id);
+    if (type === "menu") {
+      setNewItem({ 
+        name: item.name || "", 
+        desc: item.desc || "", 
+        img: item.img || "", 
+        price: item.price || "", 
+        rating: item.rating ?? 5, 
+        order: item.order ?? 0 
+      });
+      setActiveTab("menu");
+    } else if (type === "slider") {
+      setNewSlide({ 
+        url: item.url || "", 
+        order: item.order ?? 0 
+      });
+      setActiveTab("slider");
+    } else {
+      setNewSocial({ 
+        platform: item.platform || "facebook", 
+        url: item.url || "", 
+        order: item.order ?? 0 
+      });
+      setActiveTab("social");
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setNewItem({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
+    setNewSlide({ url: "", order: 0 });
+    setNewSocial({ platform: "facebook", url: "", order: 0 });
+  };
+
+  const handleDelete = async (coll: string, id: string) => {
+    if (confirm("Are you sure?")) {
+      await deleteDoc(doc(db, coll, id));
+    }
+  };
+
+  if (!isLoggedIn) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg p-6 text-center">
+      <div className="bg-white p-12 rounded-[3rem] shadow-2xl max-w-md w-full border border-black/5">
+        <Logo className="mb-8" />
+        <h2 className="text-3xl font-bold text-brand-dark mb-4">Admin Access</h2>
+        <p className="text-gray-600 mb-8 leading-relaxed">Please enter your credentials to manage Rozana Kitchen.</p>
+        
+        <form onSubmit={handleLogin} className="space-y-4 text-left">
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Username</label>
+            <input 
+              type="text" 
+              required 
+              className="admin-input" 
+              value={loginForm.username || ""} 
+              onChange={e => setLoginForm({...loginForm, username: e.target.value})} 
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Password</label>
+            <input 
+              type="password" 
+              required 
+              className="admin-input" 
+              value={loginForm.password || ""} 
+              onChange={e => setLoginForm({...loginForm, password: e.target.value})} 
+            />
+          </div>
+          {loginError && <p className="text-red-500 text-sm font-bold">{loginError}</p>}
+          <button 
+            type="submit"
+            className="w-full bg-brand-dark text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-primary transition-all shadow-lg flex items-center justify-center gap-3"
+          >
+            <LogIn size={24} /> Login
+          </button>
+        </form>
+
+        <Link to="/" className="inline-block mt-8 text-sm font-bold text-brand-primary hover:underline uppercase tracking-widest">
+          Back to Website
+        </Link>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-brand-bg pt-24 pb-12 px-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col min-h-[80vh]">
+          <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-brand-dark text-white">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center">
+                <Settings size={24} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">Admin Dashboard</h2>
+                <p className="text-white/60 text-sm">Welcome back, Rozana Admin</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={handleLogout}
+                className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-sm font-bold"
+              >
+                <LogOut size={18} /> Logout
+              </button>
+              <Link to="/" className="p-3 hover:bg-white/10 rounded-full transition-colors">
+                <X size={24} />
+              </Link>
+            </div>
+          </div>
+
+          <div className="flex border-b border-gray-100 bg-gray-50/50">
+            <button 
+              onClick={() => setActiveTab("menu")}
+              className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'menu' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
+            >
+              Food Menu
+            </button>
+            <button 
+              onClick={() => setActiveTab("slider")}
+              className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'slider' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
+            >
+              Hero Slider
+            </button>
+            <button 
+              onClick={() => setActiveTab("social")}
+              className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'social' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
+            >
+              Social Links
+            </button>
+          </div>
+
+          <div className="flex-1 p-8 md:p-12">
+            {activeTab === "menu" ? (
+              <div className="space-y-12">
+                <form onSubmit={handleAddMenuItem} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
+                  <h3 className="font-bold text-xl flex items-center gap-3">
+                    {editingId ? <Edit2 size={24} className="text-brand-primary" /> : <Plus size={24} className="text-brand-primary" />} 
+                    {editingId ? "Edit Dish" : "Add New Dish"}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Dish Name</label>
+                      <input required placeholder="e.g. Chicken Biryani" className="admin-input" value={newItem.name || ""} onChange={e => setNewItem({...newItem, name: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Price</label>
+                      <input required placeholder="e.g. AED 35" className="admin-input" value={newItem.price || ""} onChange={e => setNewItem({...newItem, price: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Image Upload</label>
+                      <input ref={menuFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "menu")} />
+                      {newItem.img && <p className="text-[10px] text-green-600 font-bold">✓ Image Ready</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Rating</label>
+                        <input type="number" step="0.1" max="5" min="1" className="admin-input" value={newItem.rating ?? 5} onChange={e => setNewItem({...newItem, rating: Number(e.target.value)})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Order</label>
+                        <input type="number" className="admin-input" value={newItem.order ?? 0} onChange={e => setNewItem({...newItem, order: Number(e.target.value)})} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Description</label>
+                    <textarea required placeholder="Tell us about this dish..." className="admin-input w-full h-32 resize-none" value={newItem.desc || ""} onChange={e => setNewItem({...newItem, desc: e.target.value})} />
+                  </div>
+                  <div className="flex gap-4">
+                    <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
+                      {loading ? "Saving..." : <><Save size={24} /> {editingId ? "Update Dish" : "Save Dish"}</>}
+                    </button>
+                    {editingId && (
+                      <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                <div className="space-y-6">
+                  <h3 className="font-bold text-xl">Current Menu Items</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {menuItems.map(item => (
+                      <div key={item.id} className="flex items-center gap-6 p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0">
+                          <img src={item.img} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-brand-dark text-lg">{item.name}</p>
+                          <p className="text-sm text-brand-primary font-bold">{item.price}</p>
+                          <p className="text-xs text-gray-400 mt-1">Order: {item.order} • Rating: {item.rating}</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <button onClick={() => startEdit("menu", item)} className="p-3 text-brand-primary hover:bg-brand-bg rounded-2xl transition-colors">
+                            <Edit2 size={20} />
+                          </button>
+                          <button onClick={() => handleDelete("menu", item.id)} className="p-3 text-red-500 hover:bg-red-50 rounded-2xl transition-colors">
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === "slider" ? (
+              <div className="space-y-12">
+                <form onSubmit={handleAddSlide} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
+                  <h3 className="font-bold text-xl flex items-center gap-3">
+                    {editingId ? <Edit2 size={24} className="text-brand-primary" /> : <ImageIcon size={24} className="text-brand-primary" />} 
+                    {editingId ? "Edit Slider Image" : "Add Slider Image"}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Image Upload</label>
+                      <input ref={sliderFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "slider")} />
+                      {newSlide.url && <p className="text-[10px] text-green-600 font-bold">✓ Image Ready</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Display Order</label>
+                      <input type="number" className="admin-input" value={newSlide.order ?? 0} onChange={e => setNewSlide({...newSlide, order: Number(e.target.value)})} />
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
+                      {loading ? "Saving..." : <><Save size={24} /> {editingId ? "Update Image" : "Save Image"}</>}
+                    </button>
+                    {editingId && (
+                      <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  {sliderImages.map(slide => (
+                    <div key={slide.id} className="relative group rounded-[2rem] overflow-hidden aspect-video shadow-lg border-4 border-white">
+                      <img src={slide.url} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                        <button onClick={() => startEdit("slider", slide)} className="bg-white p-3 rounded-full text-brand-primary shadow-xl hover:scale-110 transition-transform">
+                          <Edit2 size={20} />
+                        </button>
+                        <button onClick={() => handleDelete("slider", slide.id)} className="bg-white p-3 rounded-full text-red-500 shadow-xl hover:scale-110 transition-transform">
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
+                      <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full">
+                        Order: {slide.order}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-12">
+                <form onSubmit={handleAddSocial} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
+                  <h3 className="font-bold text-xl flex items-center gap-3">
+                    {editingId ? <Edit2 size={24} className="text-brand-primary" /> : <Share2 size={24} className="text-brand-primary" />} 
+                    {editingId ? "Edit Social Link" : "Add Social Link"}
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Platform</label>
+                      <select 
+                        className="admin-input w-full" 
+                        value={newSocial.platform || "facebook"} 
+                        onChange={e => setNewSocial({...newSocial, platform: e.target.value})}
+                      >
+                        <option value="facebook">Facebook</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="twitter">Twitter / X</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="linkedin">LinkedIn</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Profile URL</label>
+                      <input 
+                        required 
+                        placeholder="https://..." 
+                        className="admin-input" 
+                        value={newSocial.url || ""} 
+                        onChange={e => setNewSocial({...newSocial, url: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Display Order</label>
+                      <input 
+                        type="number" 
+                        className="admin-input" 
+                        value={newSocial.order ?? 0} 
+                        onChange={e => setNewSocial({...newSocial, order: Number(e.target.value)})} 
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
+                      {loading ? "Saving..." : <><Save size={24} /> {editingId ? "Update Link" : "Save Link"}</>}
+                    </button>
+                    {editingId && (
+                      <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                <div className="space-y-6">
+                  <h3 className="font-bold text-xl">Current Social Links</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {socialLinks.map(link => (
+                      <div key={link.id} className="flex items-center gap-6 p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-12 h-12 bg-brand-bg rounded-xl flex items-center justify-center text-brand-primary shrink-0">
+                          {link.platform === 'facebook' && <Facebook size={24} />}
+                          {link.platform === 'instagram' && <Instagram size={24} />}
+                          {link.platform === 'twitter' && <Twitter size={24} />}
+                          {link.platform === 'youtube' && <Youtube size={24} />}
+                          {link.platform === 'linkedin' && <Linkedin size={24} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-brand-dark capitalize">{link.platform}</p>
+                          <p className="text-xs text-gray-400 truncate">{link.url}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => startEdit("social", link)} className="p-3 text-brand-primary hover:bg-brand-bg rounded-2xl transition-colors">
+                            <Edit2 size={20} />
+                          </button>
+                          <button onClick={() => handleDelete("social", link.id)} className="p-3 text-red-500 hover:bg-red-50 rounded-2xl transition-colors">
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HomePage = () => (
+  <>
+    <Hero />
+    <Features />
+    <Testimonials />
+    <MenuSection />
+    <About />
+    <CTA />
+    <Footer />
+  </>
+);
+
 export default function App() {
   return (
-    <main className="font-sans">
-      <Navbar />
-      <Hero />
-      <Features />
-      <Testimonials />
-      <MenuSection />
-      <About />
-      <CTA />
-      {/* <Contact /> */}
-      <Footer />
-    </main>
+    <BrowserRouter>
+      <main className="font-sans">
+        <Navbar />
+        
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/admin" element={<AdminPanel />} />
+        </Routes>
+      </main>
+    </BrowserRouter>
   );
 }
