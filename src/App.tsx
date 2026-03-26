@@ -8,7 +8,8 @@ import { Menu, X, ChevronRight, ChevronDown, Star, Clock, Utensils, Heart, Quote
 import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import { auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
-  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, addDoc, serverTimestamp 
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, addDoc, serverTimestamp,
+  handleFirestoreError, OperationType
 } from "./firebase";
 import { Language, translations } from "./translations";
 
@@ -480,6 +481,24 @@ const MenuSection = () => {
 
 const About = () => {
   const { t } = useLanguage();
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "about"), (snap) => {
+      if (!snap.empty) {
+        setData(snap.docs[0].data());
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const aboutTitle = data?.title || t.about.title;
+  const p1 = data?.p1 || t.about.p1;
+  const p2 = data?.p2 || t.about.p2;
+  const videoUrl = data?.videoUrl || "https://player.vimeo.com/external/434045526.sd.mp4?s=c27db96a9db273f6427db96a9db273f6427db96a&profile_id=164&oauth2_token_id=57447761";
+  const videoLabel = data?.label || t.about.videoLabel;
+  const videoSub = data?.sub || t.about.videoSub;
+
   return (
     <section id="about" className="py-24 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
@@ -493,13 +512,13 @@ const About = () => {
               <div className="w-8 h-[2px] bg-brand-primary"></div>
               <span className="text-brand-primary font-bold uppercase tracking-widest text-xs">{t.about.label}</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-brand-dark mb-8 leading-tight">{t.about.title}</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-brand-dark mb-8 leading-tight">{aboutTitle}</h2>
             <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
               <p>
-                {t.about.p1}
+                {p1}
               </p>
               <p>
-                {t.about.p2}
+                {p2}
               </p>
             </div>
           </motion.div>
@@ -517,17 +536,16 @@ const About = () => {
                 loop 
                 muted 
                 playsInline
+                key={videoUrl}
                 className="w-full h-full object-cover"
                 poster="https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=800&q=80"
               >
-                {/* Replace 'about-video.mp4' with your uploaded video file */}
-                <source src="/about-video.mp4" type="video/mp4" />
-                <source src="https://player.vimeo.com/external/434045526.sd.mp4?s=c27db96a9db273f6427db96a9db273f6427db96a&profile_id=164&oauth2_token_id=57447761" type="video/mp4" />
+                <source src={videoUrl} type="video/mp4" />
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
               <div className="absolute bottom-8 left-8 text-white">
-                <p className="text-sm font-bold uppercase tracking-widest mb-1">{t.about.videoLabel}</p>
-                <p className="text-2xl font-serif italic">{t.about.videoSub}</p>
+                <p className="text-sm font-bold uppercase tracking-widest mb-1">{videoLabel}</p>
+                <p className="text-2xl font-serif italic">{videoSub}</p>
               </div>
             </div>
           </motion.div>
@@ -540,7 +558,16 @@ const About = () => {
 
 const Testimonials = () => {
   const { t } = useLanguage();
-  const reviews = [
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(query(collection(db, "testimonials"), orderBy("order", "asc")), (snap) => {
+      setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  const defaultReviews = [
     {
       name: "Anjali Sharma",
       text: "The Butter Chicken is exactly how my mom makes it. Truly ghar jaisa khana! It's become my weekend ritual.",
@@ -561,6 +588,8 @@ const Testimonials = () => {
     }
   ];
 
+  const displayReviews = reviews.length > 0 ? reviews : defaultReviews;
+
   return (
     <section className="bg-brand-dark py-20 overflow-hidden relative">
       {/* Decorative Strip */}
@@ -573,9 +602,9 @@ const Testimonials = () => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-8">
-          {reviews.map((review, i) => (
+          {displayReviews.map((review, i) => (
             <motion.div
-              key={i}
+              key={review.id || i}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -929,24 +958,51 @@ const Footer = () => {
   );
 };
 
-const AdminPanel = () => {
+const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsLoggedIn: (val: boolean) => void }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<"menu" | "slider" | "social">("menu");
+  const [activeTab, setActiveTab] = useState<"menu" | "slider" | "social" | "features" | "about" | "testimonials">("menu");
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [sliderImages, setSliderImages] = useState<any[]>([]);
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
+  const [aboutData, setAboutData] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Reset login form when not logged in or when navigating to admin
+    if (!isLoggedIn) {
+      setLoginForm({ username: "", password: "" });
+    }
+  }, [isLoggedIn, location.pathname]);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (saveSuccess) {
+      const timer = setTimeout(() => setSaveSuccess(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [saveSuccess]);
 
   // Form states
   const [newItem, setNewItem] = useState({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
   const [newSlide, setNewSlide] = useState({ url: "", order: 0 });
   const [newSocial, setNewSocial] = useState({ platform: "facebook", url: "", order: 0 });
   const [newFeature, setNewFeature] = useState({ title: "", desc: "", img: "", icon: "Heart", order: 0 });
+  const [newAbout, setNewAbout] = useState({ title: "", p1: "", p2: "", videoUrl: "", label: "", sub: "" });
+  const [newTestimonial, setNewTestimonial] = useState({ name: "", text: "", rating: 5, img: "", order: 0 });
   
   // Edit states
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -954,22 +1010,61 @@ const AdminPanel = () => {
   const menuFileRef = useRef<HTMLInputElement>(null);
   const sliderFileRef = useRef<HTMLInputElement>(null);
   const featureFileRef = useRef<HTMLInputElement>(null);
+  const testimonialFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const unsubMenu = onSnapshot(query(collection(db, "menu"), orderBy("order", "asc")), (snap) => {
       setMenuItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    }, (err) => handleFirestoreError(err, OperationType.GET, "menu"));
+
     const unsubSlider = onSnapshot(query(collection(db, "slider"), orderBy("order", "asc")), (snap) => {
       setSliderImages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    }, (err) => handleFirestoreError(err, OperationType.GET, "slider"));
+
     const unsubSocial = onSnapshot(query(collection(db, "social"), orderBy("order", "asc")), (snap) => {
       setSocialLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    }, (err) => handleFirestoreError(err, OperationType.GET, "social"));
+
     const unsubFeatures = onSnapshot(query(collection(db, "features"), orderBy("order", "asc")), (snap) => {
       setFeatures(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    return () => { unsubMenu(); unsubSlider(); unsubSocial(); unsubFeatures(); };
+    }, (err) => handleFirestoreError(err, OperationType.GET, "features"));
+
+    const unsubAbout = onSnapshot(collection(db, "about"), (snap) => {
+      setAboutData(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => handleFirestoreError(err, OperationType.GET, "about"));
+
+    const unsubTestimonials = onSnapshot(query(collection(db, "testimonials"), orderBy("order", "asc")), (snap) => {
+      setTestimonials(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => handleFirestoreError(err, OperationType.GET, "testimonials"));
+
+    return () => { 
+      unsubMenu(); unsubSlider(); unsubSocial(); unsubFeatures(); unsubAbout(); unsubTestimonials();
+    };
   }, []);
+
+  const handleTabChange = (tab: any) => {
+    setActiveTab(tab);
+    setEditingId(null);
+    setNewItem({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
+    setNewSlide({ url: "", order: 0 });
+    setNewSocial({ platform: "facebook", url: "", order: 0 });
+    setNewFeature({ title: "", desc: "", img: "", icon: "Heart", order: 0 });
+    setNewTestimonial({ name: "", text: "", rating: 5, img: "", order: 0 });
+    
+    if (tab === "about" && aboutData.length > 0) {
+      const item = aboutData[0];
+      setNewAbout({
+        title: item.title || "",
+        p1: item.p1 || "",
+        p2: item.p2 || "",
+        videoUrl: item.videoUrl || "",
+        label: item.label || "",
+        sub: item.sub || ""
+      });
+    } else {
+      setNewAbout({ title: "", p1: "", p2: "", videoUrl: "", label: "", sub: "" });
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -985,11 +1080,11 @@ const AdminPanel = () => {
     setIsLoggedIn(false);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "menu" | "slider" | "feature") => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "menu" | "slider" | "feature" | "testimonial") => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) {
-        alert("File too large! Please upload an image smaller than 1MB.");
+      if (file.size > 512 * 1024) {
+        alert("File too large! Please upload an image smaller than 500KB.");
         return;
       }
       const reader = new FileReader();
@@ -999,11 +1094,67 @@ const AdminPanel = () => {
           setNewItem({ ...newItem, img: base64String });
         } else if (type === "slider") {
           setNewSlide({ ...newSlide, url: base64String });
-        } else {
+        } else if (type === "feature") {
           setNewFeature({ ...newFeature, img: base64String });
+        } else if (type === "testimonial") {
+          setNewTestimonial({ ...newTestimonial, img: base64String });
         }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddAbout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setSaveSuccess(false);
+    try {
+      // About is usually a single document or we update the first one
+      const docId = aboutData.length > 0 ? aboutData[0].id : "main";
+      await setDoc(doc(db, "about", docId), newAbout);
+      
+      setSaveSuccess(true);
+      setToast("About section updated successfully!");
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setLoading(false);
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+      handleFirestoreError(err, OperationType.WRITE, "about");
+      alert("Error saving about section. Please try again.");
+    }
+  };
+
+  const handleAddTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTestimonial.img && !editingId) {
+      alert("Please upload an image first!");
+      return;
+    }
+    setLoading(true);
+    setSaveSuccess(false);
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, "testimonials", editingId), { ...newTestimonial, rating: Number(newTestimonial.rating), order: Number(newTestimonial.order) });
+        setEditingId(null);
+      } else {
+        await addDoc(collection(db, "testimonials"), { ...newTestimonial, rating: Number(newTestimonial.rating), order: Number(newTestimonial.order) });
+      }
+      setNewTestimonial({ name: "", text: "", rating: 5, img: "", order: 0 });
+      if (testimonialFileRef.current) testimonialFileRef.current.value = "";
+      setSaveSuccess(true);
+      setToast("Testimonial saved successfully!");
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setLoading(false);
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+      handleFirestoreError(err, OperationType.WRITE, "testimonials");
+      alert("Error saving testimonial. Please try again.");
     }
   };
 
@@ -1014,6 +1165,7 @@ const AdminPanel = () => {
       return;
     }
     setLoading(true);
+    setSaveSuccess(false);
     try {
       if (editingId) {
         await updateDoc(doc(db, "menu", editingId), { ...newItem, rating: Number(newItem.rating), order: Number(newItem.order) });
@@ -1023,8 +1175,18 @@ const AdminPanel = () => {
       }
       setNewItem({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
       if (menuFileRef.current) menuFileRef.current.value = "";
-    } catch (err) { console.error(err); }
-    setLoading(false);
+      setSaveSuccess(true);
+      setToast("Dish saved successfully!");
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setLoading(false);
+      }, 1500);
+    } catch (err) { 
+      console.error(err);
+      setLoading(false);
+      handleFirestoreError(err, OperationType.WRITE, "menu");
+      alert("Error saving dish. Please try again.");
+    }
   };
 
   const handleAddSlide = async (e: React.FormEvent) => {
@@ -1034,6 +1196,7 @@ const AdminPanel = () => {
       return;
     }
     setLoading(true);
+    setSaveSuccess(false);
     try {
       if (editingId) {
         await updateDoc(doc(db, "slider", editingId), { ...newSlide, order: Number(newSlide.order) });
@@ -1043,8 +1206,18 @@ const AdminPanel = () => {
       }
       setNewSlide({ url: "", order: 0 });
       if (sliderFileRef.current) sliderFileRef.current.value = "";
-    } catch (err) { console.error(err); }
-    setLoading(false);
+      setSaveSuccess(true);
+      setToast("Slide saved successfully!");
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setLoading(false);
+      }, 1500);
+    } catch (err) { 
+      console.error(err);
+      setLoading(false);
+      handleFirestoreError(err, OperationType.WRITE, "slider");
+      alert("Error saving slide. Please try again.");
+    }
   };
 
   const handleAddSocial = async (e: React.FormEvent) => {
@@ -1054,6 +1227,7 @@ const AdminPanel = () => {
       return;
     }
     setLoading(true);
+    setSaveSuccess(false);
     try {
       if (editingId) {
         await updateDoc(doc(db, "social", editingId), { ...newSocial, order: Number(newSocial.order) });
@@ -1062,8 +1236,18 @@ const AdminPanel = () => {
         await addDoc(collection(db, "social"), { ...newSocial, order: Number(newSocial.order) });
       }
       setNewSocial({ platform: "facebook", url: "", order: 0 });
-    } catch (err) { console.error(err); }
-    setLoading(false);
+      setSaveSuccess(true);
+      setToast("Social link saved successfully!");
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setLoading(false);
+      }, 1500);
+    } catch (err) { 
+      console.error(err);
+      setLoading(false);
+      handleFirestoreError(err, OperationType.WRITE, "social");
+      alert("Error saving social link. Please try again.");
+    }
   };
 
   const handleAddFeature = async (e: React.FormEvent) => {
@@ -1073,6 +1257,7 @@ const AdminPanel = () => {
       return;
     }
     setLoading(true);
+    setSaveSuccess(false);
     try {
       if (editingId) {
         await updateDoc(doc(db, "features", editingId), { ...newFeature, order: Number(newFeature.order) });
@@ -1082,11 +1267,21 @@ const AdminPanel = () => {
       }
       setNewFeature({ title: "", desc: "", img: "", icon: "Heart", order: 0 });
       if (featureFileRef.current) featureFileRef.current.value = "";
-    } catch (err) { console.error(err); }
-    setLoading(false);
+      setSaveSuccess(true);
+      setToast("Feature saved successfully!");
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setLoading(false);
+      }, 1500);
+    } catch (err) { 
+      console.error(err);
+      setLoading(false);
+      handleFirestoreError(err, OperationType.WRITE, "features");
+      alert("Error saving feature. Please try again.");
+    }
   };
 
-  const startEdit = (type: "menu" | "slider" | "social" | "feature", item: any) => {
+  const startEdit = (type: "menu" | "slider" | "social" | "feature" | "testimonial" | "about", item: any) => {
     setEditingId(item.id);
     if (type === "menu") {
       setNewItem({ 
@@ -1111,7 +1306,7 @@ const AdminPanel = () => {
         order: item.order ?? 0 
       });
       setActiveTab("social");
-    } else {
+    } else if (type === "feature") {
       setNewFeature({
         title: item.title || "",
         desc: item.desc || "",
@@ -1120,6 +1315,25 @@ const AdminPanel = () => {
         order: item.order ?? 0
       });
       setActiveTab("features" as any);
+    } else if (type === "testimonial") {
+      setNewTestimonial({
+        name: item.name || "",
+        text: item.text || "",
+        rating: item.rating ?? 5,
+        img: item.img || "",
+        order: item.order ?? 0
+      });
+      setActiveTab("testimonials");
+    } else if (type === "about") {
+      setNewAbout({
+        title: item.title || "",
+        p1: item.p1 || "",
+        p2: item.p2 || "",
+        videoUrl: item.videoUrl || "",
+        label: item.label || "",
+        sub: item.sub || ""
+      });
+      setActiveTab("about");
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1130,11 +1344,18 @@ const AdminPanel = () => {
     setNewSlide({ url: "", order: 0 });
     setNewSocial({ platform: "facebook", url: "", order: 0 });
     setNewFeature({ title: "", desc: "", img: "", icon: "Heart", order: 0 });
+    setNewAbout({ title: "", p1: "", p2: "", videoUrl: "", label: "", sub: "" });
+    setNewTestimonial({ name: "", text: "", rating: 5, img: "", order: 0 });
   };
 
   const handleDelete = async (coll: string, id: string) => {
     if (confirm("Are you sure?")) {
-      await deleteDoc(doc(db, coll, id));
+      try {
+        await deleteDoc(doc(db, coll, id));
+        setToast("Item deleted successfully!");
+      } catch (err) {
+        handleFirestoreError(err, OperationType.DELETE, `${coll}/${id}`);
+      }
     }
   };
 
@@ -1145,12 +1366,13 @@ const AdminPanel = () => {
         <h2 className="text-3xl font-bold text-brand-dark mb-4">{t.admin.loginTitle}</h2>
         <p className="text-gray-600 mb-8 leading-relaxed">{t.admin.loginDesc}</p>
         
-        <form onSubmit={handleLogin} className="space-y-4 text-left">
+        <form onSubmit={handleLogin} className="space-y-4 text-left" autoComplete="off">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.username}</label>
             <input 
               type="text" 
               required 
+              autoComplete="off"
               className="admin-input" 
               value={loginForm.username || ""} 
               onChange={e => setLoginForm({...loginForm, username: e.target.value})} 
@@ -1161,6 +1383,7 @@ const AdminPanel = () => {
             <input 
               type="password" 
               required 
+              autoComplete="new-password"
               className="admin-input" 
               value={loginForm.password || ""} 
               onChange={e => setLoginForm({...loginForm, password: e.target.value})} 
@@ -1234,9 +1457,36 @@ const AdminPanel = () => {
             >
               {t.admin.features}
             </button>
+            <button 
+              onClick={() => setActiveTab("about")}
+              className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'about' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
+            >
+              {t.admin.about || "About"}
+            </button>
+            <button 
+              onClick={() => setActiveTab("testimonials")}
+              className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'testimonials' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
+            >
+              {t.admin.testimonials || "Testimonials"}
+            </button>
           </div>
 
-          <div className="flex-1 p-8 md:p-12">
+          <div className="flex-1 p-8 md:p-12 relative">
+            <AnimatePresence>
+              {toast && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -20, x: "-50%" }}
+                  animate={{ opacity: 1, y: 0, x: "-50%" }}
+                  exit={{ opacity: 0, y: -20, x: "-50%" }}
+                  className="fixed top-24 left-1/2 bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl font-bold z-[100] flex items-center gap-3 border-2 border-white/20"
+                >
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <Save size={18} />
+                  </div>
+                  {toast}
+                </motion.div>
+              )}
+            </AnimatePresence>
             {activeTab === "menu" ? (
               <div className="space-y-12">
                 <form onSubmit={handleAddMenuItem} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
@@ -1274,8 +1524,8 @@ const AdminPanel = () => {
                     <textarea required placeholder={t.admin.descriptionPlaceholder} className="admin-input w-full h-32 resize-none" value={newItem.desc || ""} onChange={e => setNewItem({...newItem, desc: e.target.value})} />
                   </div>
                   <div className="flex gap-4">
-                    <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
-                      {loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateDish : t.admin.saveDish}</>}
+                    <button disabled={loading} type="submit" className={`flex-1 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-xl ${saveSuccess ? 'bg-green-600 text-white' : 'bg-brand-primary text-white hover:bg-brand-dark'}`}>
+                      {saveSuccess ? <><Save size={24} /> {t.admin.saved || "Saved!"}</> : loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateDish : t.admin.saveDish}</>}
                     </button>
                     {editingId && (
                       <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
@@ -1330,8 +1580,8 @@ const AdminPanel = () => {
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
-                      {loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateImage : t.admin.saveImage}</>}
+                    <button disabled={loading} type="submit" className={`flex-1 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-xl ${saveSuccess ? 'bg-green-600 text-white' : 'bg-brand-primary text-white hover:bg-brand-dark'}`}>
+                      {saveSuccess ? <><Save size={24} /> {t.admin.saved || "Saved!"}</> : loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateImage : t.admin.saveImage}</>}
                     </button>
                     {editingId && (
                       <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
@@ -1395,8 +1645,8 @@ const AdminPanel = () => {
                     <textarea required className="admin-input w-full h-32 resize-none" value={newFeature.desc || ""} onChange={e => setNewFeature({...newFeature, desc: e.target.value})} />
                   </div>
                   <div className="flex gap-4">
-                    <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
-                      {loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateFeature : t.admin.saveFeature}</>}
+                    <button disabled={loading} type="submit" className={`flex-1 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-xl ${saveSuccess ? 'bg-green-600 text-white' : 'bg-brand-primary text-white hover:bg-brand-dark'}`}>
+                      {saveSuccess ? <><Save size={24} /> {t.admin.saved || "Saved!"}</> : loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateFeature : t.admin.saveFeature}</>}
                     </button>
                     {editingId && (
                       <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
@@ -1431,7 +1681,7 @@ const AdminPanel = () => {
                   </div>
                 </div>
               </div>
-            ) : (
+            ) : activeTab === "social" ? (
               <div className="space-y-12">
                 <form onSubmit={handleAddSocial} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
                   <h3 className="font-bold text-xl flex items-center gap-3">
@@ -1474,8 +1724,8 @@ const AdminPanel = () => {
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
-                      {loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateLink : t.admin.saveLink}</>}
+                    <button disabled={loading} type="submit" className={`flex-1 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-xl ${saveSuccess ? 'bg-green-600 text-white' : 'bg-brand-primary text-white hover:bg-brand-dark'}`}>
+                      {saveSuccess ? <><Save size={24} /> {t.admin.saved || "Saved!"}</> : loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateLink : t.admin.saveLink}</>}
                     </button>
                     {editingId && (
                       <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
@@ -1514,6 +1764,113 @@ const AdminPanel = () => {
                   </div>
                 </div>
               </div>
+            ) : activeTab === "about" ? (
+              <div className="space-y-12">
+                <form onSubmit={handleAddAbout} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
+                  <h3 className="font-bold text-xl flex items-center gap-3">
+                    <Edit2 size={24} className="text-brand-primary" /> 
+                    {t.admin.editAbout || "Edit About Section"}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.title || "Title"}</label>
+                      <input required className="admin-input" value={newAbout.title || ""} onChange={e => setNewAbout({...newAbout, title: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.videoUrl || "Video URL"}</label>
+                      <input className="admin-input" value={newAbout.videoUrl || ""} onChange={e => setNewAbout({...newAbout, videoUrl: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.videoLabel || "Video Label"}</label>
+                      <input className="admin-input" value={newAbout.label || ""} onChange={e => setNewAbout({...newAbout, label: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.videoSub || "Video Subtitle"}</label>
+                      <input className="admin-input" value={newAbout.sub || ""} onChange={e => setNewAbout({...newAbout, sub: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.paragraph1 || "Paragraph 1"}</label>
+                    <textarea required className="admin-input w-full h-32 resize-none" value={newAbout.p1 || ""} onChange={e => setNewAbout({...newAbout, p1: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.paragraph2 || "Paragraph 2"}</label>
+                    <textarea required className="admin-input w-full h-32 resize-none" value={newAbout.p2 || ""} onChange={e => setNewAbout({...newAbout, p2: e.target.value})} />
+                  </div>
+                  <div className="flex gap-4">
+                    <button disabled={loading} type="submit" className={`flex-1 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-xl ${saveSuccess ? 'bg-green-600 text-white' : 'bg-brand-primary text-white hover:bg-brand-dark'}`}>
+                      {saveSuccess ? <><Save size={24} /> {t.admin.saved || "Saved!"}</> : loading ? t.admin.saving : <><Save size={24} /> {t.admin.saveAbout || "Save About Section"}</>}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="space-y-12">
+                <form onSubmit={handleAddTestimonial} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
+                  <h3 className="font-bold text-xl flex items-center gap-3">
+                    {editingId ? <Edit2 size={24} className="text-brand-primary" /> : <Plus size={24} className="text-brand-primary" />} 
+                    {editingId ? t.admin.editTestimonial || "Edit Testimonial" : t.admin.addTestimonial || "Add Testimonial"}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.clientName || "Client Name"}</label>
+                      <input required className="admin-input" value={newTestimonial.name || ""} onChange={e => setNewTestimonial({...newTestimonial, name: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.rating || "Rating"}</label>
+                      <input type="number" step="1" max="5" min="1" className="admin-input" value={newTestimonial.rating ?? 5} onChange={e => setNewTestimonial({...newTestimonial, rating: Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload || "Image Upload"}</label>
+                      <input ref={testimonialFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "testimonial")} />
+                      {newTestimonial.img && <p className="text-[10px] text-green-600 font-bold">{t.admin.imageReady}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.order || "Order"}</label>
+                      <input type="number" className="admin-input" value={newTestimonial.order ?? 0} onChange={e => setNewTestimonial({...newTestimonial, order: Number(e.target.value)})} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.testimonialText || "Testimonial Text"}</label>
+                    <textarea required className="admin-input w-full h-32 resize-none" value={newTestimonial.text || ""} onChange={e => setNewTestimonial({...newTestimonial, text: e.target.value})} />
+                  </div>
+                  <div className="flex gap-4">
+                    <button disabled={loading} type="submit" className={`flex-1 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-xl ${saveSuccess ? 'bg-green-600 text-white' : 'bg-brand-primary text-white hover:bg-brand-dark'}`}>
+                      {saveSuccess ? <><Save size={24} /> {t.admin.saved || "Saved!"}</> : loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateTestimonial || "Update Testimonial" : t.admin.saveTestimonial || "Save Testimonial"}</>}
+                    </button>
+                    {editingId && (
+                      <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
+                        {t.admin.cancel}
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                <div className="space-y-6">
+                  <h3 className="font-bold text-xl">{t.admin.currentTestimonials || "Current Testimonials"}</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {testimonials.map(tst => (
+                      <div key={tst.id} className="flex items-center gap-6 p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-16 h-16 rounded-full overflow-hidden shrink-0">
+                          <img src={tst.img} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-brand-dark">{tst.name}</p>
+                          <p className="text-xs text-gray-400 line-clamp-2">{tst.text}</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <button onClick={() => startEdit("testimonial", tst)} className="p-3 text-brand-primary hover:bg-brand-bg rounded-2xl transition-colors">
+                            <Edit2 size={20} />
+                          </button>
+                          <button onClick={() => handleDelete("testimonials", tst.id)} className="p-3 text-red-500 hover:bg-red-50 rounded-2xl transition-colors">
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -1539,6 +1896,14 @@ export default function App() {
     const saved = localStorage.getItem("rozana_lang");
     return (saved as Language) || 'en';
   });
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem("rozana_isLoggedIn") === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("rozana_isLoggedIn", isLoggedIn ? "true" : "false");
+  }, [isLoggedIn]);
 
   useEffect(() => {
     localStorage.setItem("rozana_lang", lang);
@@ -1560,7 +1925,7 @@ export default function App() {
           
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/admin" element={<AdminPanel isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />} />
           </Routes>
         </main>
       </BrowserRouter>

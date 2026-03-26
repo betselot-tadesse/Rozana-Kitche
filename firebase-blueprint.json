@@ -56,6 +56,32 @@
         "order": { "type": "integer", "description": "Display order" }
       },
       "required": ["title", "desc", "img", "icon"]
+    },
+    "About": {
+      "title": "About Section",
+      "description": "Content for the About Us section",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "p1": { "type": "string" },
+        "p2": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "label": { "type": "string" },
+        "sub": { "type": "string" }
+      }
+    },
+    "Testimonial": {
+      "title": "Testimonial",
+      "description": "A customer testimonial",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "text": { "type": "string" },
+        "rating": { "type": "number" },
+        "img": { "type": "string" },
+        "order": { "type": "integer" }
+      },
+      "required": ["name", "text", "rating"]
     }
   },
   "firestore": {
@@ -78,6 +104,14 @@
     "features": {
       "schema": "Feature",
       "description": "Collection of 'Why Choose Us' features"
+    },
+    "about": {
+      "schema": "About",
+      "description": "About Us content"
+    },
+    "testimonials": {
+      "schema": "Testimonial",
+      "description": "Customer testimonials"
     }
   }
 }

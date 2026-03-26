@@ -30,6 +30,31 @@ service cloud.firestore {
     //   - url: string
     //   - order: number
     //
+    // Collection: features
+    // Fields:
+    //   - title: string
+    //   - desc: string
+    //   - img: string
+    //   - icon: string
+    //   - order: number
+    //
+    // Collection: about
+    // Fields:
+    //   - title: string
+    //   - p1: string
+    //   - p2: string
+    //   - videoUrl: string
+    //   - label: string
+    //   - sub: string
+    //
+    // Collection: testimonials
+    // Fields:
+    //   - name: string
+    //   - text: string
+    //   - rating: number
+    //   - img: string
+    //   - order: number
+    //
     // ===============================================================
 
     // Helper Functions
@@ -59,22 +84,32 @@ service cloud.firestore {
 
     match /menu/{itemId} {
       allow read: if true;
-      allow write: if true; // Relaxed for custom admin panel in dev environment
+      allow write: if isAdmin();
     }
 
     match /slider/{slideId} {
       allow read: if true;
-      allow write: if true; // Relaxed for custom admin panel in dev environment
+      allow write: if isAdmin();
     }
     
     match /social/{linkId} {
       allow read: if true;
-      allow write: if true; // Relaxed for custom admin panel in dev environment
+      allow write: if isAdmin();
     }
 
     match /features/{featureId} {
       allow read: if true;
-      allow write: if true; // Relaxed for custom admin panel in dev environment
+      allow write: if isAdmin();
+    }
+
+    match /about/{aboutId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /testimonials/{testimonialId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }
