@@ -1,0 +1,417 @@
+
+export type Language = 'en' | 'ar' | 'hi' | 'ur';
+
+export const translations = {
+  en: {
+    dir: 'ltr',
+    nav: {
+      menu: 'Menu',
+      about: 'About',
+      order: 'Order Now',
+      home: 'Home'
+    },
+    hero: {
+      title: 'Ghar Jaisa Khana,',
+      subtitle: 'Freshly prepared North Indian comfort food delivered straight to you.',
+      orderBtn: 'Order Now',
+      menuBtn: 'View Menu'
+    },
+    features: {
+      sectionTitle: 'Why People Love Rozana Kitchen',
+      f1Title: 'Home Style Cooking',
+      f1Desc: 'Recipes inspired by everyday Indian kitchens, made with love and traditional spices.',
+      f2Title: 'Per your Taste',
+      f2Desc: 'Fresh ingredients prepared exactly how you like them. No frozen shortcuts, just pure taste.',
+      f3Title: 'Made to share',
+      f3Desc: 'Delicious, high-quality meals designed to bring people together around the table.'
+    },
+    menu: {
+      sectionTitle: 'Rozana with Love',
+      sectionSubtitle: 'Our most ordered dishes that bring the taste of home to your table.',
+      viewFull: 'View Full Menu',
+      showLess: 'Show Less',
+      readMore: 'Read More'
+    },
+    about: {
+      label: 'Our Heritage',
+      title: 'The Story of Rozana Kitchen',
+      p1: 'Rozana has grown in the UAE, We have seen the hustle bustle of Business Bay to the calm of Ajman Beaches. We as a team are foodies and fanatics of the trade that is “Taste”.',
+      p2: 'Seeing that there is none in the market who could provide North Indian flavours just like our mother cooked, we curated some handpicked recipes from the moms of the UAE and made Rozana Kitchen.',
+      videoLabel: 'Handcrafted',
+      videoSub: 'With Love & Spices'
+    },
+    testimonials: {
+      label: 'Testimonials',
+      title: 'What Our Customers Say',
+      verified: 'Verified Customer'
+    },
+    cta: {
+      title: 'Ready to order? We are nearby!',
+      subtitle: 'Join thousands of happy customers who enjoy fresh, home-style meals every day. Order now and get your first meal delivered in 30 minutes.',
+      orderBtn: 'Order Now',
+      partners: 'Our Delivery Partners',
+      available: 'Available Now',
+      soon: 'Coming Soon'
+    },
+    footer: {
+      desc: 'Bringing the authentic taste of North Indian home-style cooking to your doorstep. Fresh, healthy, and delicious meals, every single day.',
+      quickLinks: 'Quick Links',
+      followUs: 'Follow Us',
+      login: 'Login',
+      copyright: '© 2026 Rozana Kitchen. All rights reserved. Home Style Indian Meals.'
+    },
+    admin: {
+      dashboard: 'Admin Dashboard',
+      welcome: 'Welcome back, Rozana Admin',
+      logout: 'Logout',
+      foodMenu: 'Food Menu',
+      heroSlider: 'Hero Slider',
+      socialLinks: 'Social Links',
+      addDish: 'Add New Dish',
+      editDish: 'Edit Dish',
+      dishName: 'Dish Name',
+      price: 'Price',
+      imageUpload: 'Image Upload',
+      rating: 'Rating',
+      order: 'Order',
+      description: 'Description',
+      saveDish: 'Save Dish',
+      updateDish: 'Update Dish',
+      cancel: 'Cancel',
+      currentItems: 'Current Menu Items',
+      addSlide: 'Add Slider Image',
+      editSlide: 'Edit Slider Image',
+      displayOrder: 'Display Order',
+      saveImage: 'Save Image',
+      updateImage: 'Update Image',
+      addSocial: 'Add Social Link',
+      editSocial: 'Edit Social Link',
+      platform: 'Platform',
+      profileUrl: 'Profile URL',
+      saveLink: 'Save Link',
+      updateLink: 'Update Link',
+      currentSocial: 'Current Social Links',
+      loginTitle: 'Admin Access',
+      loginDesc: 'Please enter your credentials to manage Rozana Kitchen.',
+      username: 'Username',
+      password: 'Password',
+      loginBtn: 'Login',
+      backToWeb: 'Back to Website',
+      saving: "Saving...",
+      imageReady: "✓ Image Ready",
+      dishNamePlaceholder: "e.g. Chicken Biryani",
+      pricePlaceholder: "e.g. AED 35",
+      descriptionPlaceholder: "Tell us about this dish...",
+      urlPlaceholder: "https://..."
+    }
+  },
+  ar: {
+    dir: 'rtl',
+    nav: {
+      menu: 'القائمة',
+      about: 'حولنا',
+      order: 'اطلب الآن',
+      home: 'الرئيسية'
+    },
+    hero: {
+      title: 'طعام مثل طعام البيت،',
+      subtitle: 'طعام شمال الهند المريح والمحضر طازجاً يصل إليك مباشرة.',
+      orderBtn: 'اطلب الآن',
+      menuBtn: 'عرض القائمة'
+    },
+    features: {
+      sectionTitle: 'لماذا يحب الناس مطبخ روزانا',
+      f1Title: 'طبخ منزلي',
+      f1Desc: 'وصفات مستوحاة من المطابخ الهندية اليومية، مصنوعة بحب وتوابل تقليدية.',
+      f2Title: 'حسب ذوقك',
+      f2Desc: 'مكونات طازجة محضرة تماماً كما تحبها. لا توجد طرق مختصرة مجمدة، فقط طعم نقي.',
+      f3Title: 'صنع للمشاركة',
+      f3Desc: 'وجبات لذيذة وعالية الجودة مصممة لجمع الناس حول الطاولة.'
+    },
+    menu: {
+      sectionTitle: 'روزانا بكل حب',
+      sectionSubtitle: 'أكثر أطباقنا طلباً والتي تنقل طعم البيت إلى طاولتك.',
+      viewFull: 'عرض القائمة الكاملة',
+      showLess: 'عرض أقل',
+      readMore: 'اقرأ المزيد'
+    },
+    about: {
+      label: 'تراثنا',
+      title: 'قصة مطبخ روزانا',
+      p1: 'نمت روزانا في الإمارات العربية المتحدة، لقد رأينا صخب الخليج التجاري إلى هدوء شواطئ عجمان. نحن كفريق عشاق للطعام ومتعصبون لحرفة "المذاق".',
+      p2: 'رأينا أنه لا يوجد أحد في السوق يمكنه تقديم نكهات شمال الهند تماماً كما طبختها أمهاتنا، قمنا باختيار بعض الوصفات المختارة يدوياً من أمهات الإمارات وأنشأنا مطبخ روزانا.',
+      videoLabel: 'صنع يدوياً',
+      videoSub: 'بكل حب وتوابل'
+    },
+    testimonials: {
+      label: 'شهادات العملاء',
+      title: 'ماذا يقول عملاؤنا',
+      verified: 'عميل موثق'
+    },
+    cta: {
+      title: 'جاهز للطلب؟ نحن قريبون!',
+      subtitle: 'انضم إلى آلاف العملاء السعداء الذين يستمتعون بوجبات طازجة ومنزلية كل يوم. اطلب الآن واحصل على وجبتك الأولى في غضون 30 دقيقة.',
+      orderBtn: 'اطلب الآن',
+      partners: 'شركاء التوصيل لدينا',
+      available: 'متاح الآن',
+      soon: 'قريباً'
+    },
+    footer: {
+      desc: 'نقدم المذاق الأصيل للطبخ المنزلي في شمال الهند إلى عتبة داركم. وجبات طازجة وصحية ولذيذة، كل يوم.',
+      quickLinks: 'روابط سريعة',
+      followUs: 'تابعنا',
+      login: 'تسجيل الدخول',
+      copyright: '© 2026 مطبخ روزانا. جميع الحقوق محفوظة. وجبات هندية منزلية.'
+    },
+    admin: {
+      dashboard: 'لوحة التحكم',
+      welcome: 'مرحباً بعودتك، مسؤول روزانا',
+      logout: 'تسجيل الخروج',
+      foodMenu: 'قائمة الطعام',
+      heroSlider: 'شريط الصور',
+      socialLinks: 'روابط التواصل',
+      addDish: 'إضافة طبق جديد',
+      editDish: 'تعديل الطبق',
+      dishName: 'اسم الطبق',
+      price: 'السعر',
+      imageUpload: 'تحميل صورة',
+      rating: 'التقييم',
+      order: 'الترتيب',
+      description: 'الوصف',
+      saveDish: 'حفظ الطبق',
+      updateDish: 'تحديث الطبق',
+      cancel: 'إلغاء',
+      currentItems: 'أطباق القائمة الحالية',
+      addSlide: 'إضافة صورة للشريط',
+      editSlide: 'تعديل صورة الشريط',
+      displayOrder: 'ترتيب العرض',
+      saveImage: 'حفظ الصورة',
+      updateImage: 'تحديث الصورة',
+      addSocial: 'إضافة رابط تواصل',
+      editSocial: 'تعديل رابط التواصل',
+      platform: 'المنصة',
+      profileUrl: 'رابط الملف الشخصي',
+      saveLink: 'حفظ الرابط',
+      updateLink: 'تحديث الرابط',
+      currentSocial: 'الروابط الحالية',
+      loginTitle: 'دخول المسؤول',
+      loginDesc: 'يرجى إدخال بيانات الاعتماد الخاصة بك لإدارة مطبخ روزانا.',
+      username: 'اسم المستخدم',
+      password: 'كلمة المرور',
+      loginBtn: 'تسجيل الدخول',
+      backToWeb: 'العودة للموقع',
+      saving: "جاري الحفظ...",
+      imageReady: "✓ الصورة جاهزة",
+      dishNamePlaceholder: "مثال: برياني دجاج",
+      pricePlaceholder: "مثال: 35 درهم",
+      descriptionPlaceholder: "أخبرنا عن هذا الطبق...",
+      urlPlaceholder: "https://..."
+    }
+  },
+  hi: {
+    dir: 'ltr',
+    nav: {
+      menu: 'मेन्यू',
+      about: 'हमारे बारे में',
+      order: 'अभी ऑर्डर करें',
+      home: 'होम'
+    },
+    hero: {
+      title: 'घर जैसा खाना,',
+      subtitle: 'ताज़ा तैयार उत्तर भारतीय आरामदायक भोजन सीधे आप तक पहुँचाया जाता है।',
+      orderBtn: 'अभी ऑर्डर करें',
+      menuBtn: 'मेन्यू देखें'
+    },
+    features: {
+      sectionTitle: 'लोग रोज़ाना किचन को क्यों पसंद करते हैं',
+      f1Title: 'होम स्टाइल कुकिंग',
+      f1Desc: 'रोजमर्रा की भारतीय रसोई से प्रेरित रेसिपी, प्यार और पारंपरिक मसालों के साथ बनाई गई।',
+      f2Title: 'आपके स्वाद के अनुसार',
+      f2Desc: 'ताज़ा सामग्री बिल्कुल वैसे ही तैयार की जाती है जैसे आप पसंद करते हैं। कोई फ्रोजन शॉर्टकट नहीं, बस शुद्ध स्वाद।',
+      f3Title: 'साझा करने के लिए बनाया गया',
+      f3Desc: 'स्वादिष्ट, उच्च गुणवत्ता वाला भोजन लोगों को एक साथ लाने के लिए डिज़ाइन किया गया है।'
+    },
+    menu: {
+      sectionTitle: 'रोज़ाना प्यार के साथ',
+      sectionSubtitle: 'हमारे सबसे अधिक ऑर्डर किए जाने वाले व्यंजन जो आपके टेबल पर घर का स्वाद लाते हैं।',
+      viewFull: 'पूरा मेन्यू देखें',
+      showLess: 'कम दिखाएं',
+      readMore: 'अधिक पढ़ें'
+    },
+    about: {
+      label: 'हमारी विरासत',
+      title: 'रोज़ाना किचन की कहानी',
+      p1: 'रोज़ाना यूएई में विकसित हुआ है, हमने बिजनेस बे की हलचल से लेकर अजमान समुद्र तटों की शांति तक देखी है। एक टीम के रूप में हम खाने के शौकीन हैं और "स्वाद" के व्यापार के दीवाने हैं।',
+      p2: 'यह देखते हुए कि बाजार में ऐसा कोई नहीं है जो उत्तर भारतीय स्वाद प्रदान कर सके जैसा कि हमारी माँ बनाती थीं, हमने यूएई की माताओं से कुछ चुनिंदा रेसिपी तैयार कीं और रोज़ाना किचन बनाया।',
+      videoLabel: 'हाथ से बना',
+      videoSub: 'प्यार और मसालों के साथ'
+    },
+    testimonials: {
+      label: 'प्रशंसापत्र',
+      title: 'हमारे ग्राहक क्या कहते हैं',
+      verified: 'सत्यापित ग्राहक'
+    },
+    cta: {
+      title: 'ऑर्डर करने के लिए तैयार हैं? हम पास ही हैं!',
+      subtitle: 'उन हजारों खुश ग्राहकों में शामिल हों जो हर दिन ताज़ा, घर जैसा भोजन का आनंद लेते हैं। अभी ऑर्डर करें और अपना पहला भोजन 30 मिनट में प्राप्त करें।',
+      orderBtn: 'अभी ऑर्डर करें',
+      partners: 'हमारे डिलीवरी पार्टनर्स',
+      available: 'अभी उपलब्ध है',
+      soon: 'जल्द आ रहा है'
+    },
+    footer: {
+      desc: 'उत्तर भारतीय घर जैसा खाना का असली स्वाद आपके दरवाजे तक पहुँचाना। हर दिन ताज़ा, स्वस्थ और स्वादिष्ट भोजन।',
+      quickLinks: 'त्वरित लिंक',
+      followUs: 'हमें फॉलो करें',
+      login: 'लॉगिन',
+      copyright: '© 2026 रोज़ाना किचन। सर्वाधिकार सुरक्षित। होम स्टाइल भारतीय भोजन।'
+    },
+    admin: {
+      dashboard: 'एडमिन डैशबोर्ड',
+      welcome: 'वापसी पर स्वागत है, रोज़ाना एडमिन',
+      logout: 'लॉगआउट',
+      foodMenu: 'फूड मेन्यू',
+      heroSlider: 'हीरो स्लाइडर',
+      socialLinks: 'सोशल लिंक्स',
+      addDish: 'नया व्यंजन जोड़ें',
+      editDish: 'व्यंजन संपादित करें',
+      dishName: 'व्यंजन का नाम',
+      price: 'कीमत',
+      imageUpload: 'इमेज अपलोड',
+      rating: 'रेटिंग',
+      order: 'क्रम',
+      description: 'विवरण',
+      saveDish: 'व्यंजन सहेजें',
+      updateDish: 'व्यंजन अपडेट करें',
+      cancel: 'रद्द करें',
+      currentItems: 'वर्तमान मेन्यू आइटम',
+      addSlide: 'स्लाइडर इमेज जोड़ें',
+      editSlide: 'स्लाइडर इमेज संपादित करें',
+      displayOrder: 'प्रदर्शन क्रम',
+      saveImage: 'इमेज सहेजें',
+      updateImage: 'इमेज अपडेट करें',
+      addSocial: 'सोशल लिंक जोड़ें',
+      editSocial: 'सोशल लिंक संपादित करें',
+      platform: 'प्लेटफॉर्म',
+      profileUrl: 'प्रोफाइल यूआरएल',
+      saveLink: 'लिंक सहेजें',
+      updateLink: 'लिंक अपडेट करें',
+      currentSocial: 'वर्तमान सोशल लिंक्स',
+      loginTitle: 'एडमिन एक्सेस',
+      loginDesc: 'रोज़ाना किचन को प्रबंधित करने के लिए कृपया अपनी साख दर्ज करें।',
+      username: 'यूज़रनेम',
+      password: 'पासवर्ड',
+      loginBtn: 'लॉगिन',
+      backToWeb: 'वेबसाइट पर वापस जाएं',
+      saving: "सहेज रहा है...",
+      imageReady: "✓ छवि तैयार है",
+      dishNamePlaceholder: "जैसे: चिकन बिरयानी",
+      pricePlaceholder: "जैसे: AED 35",
+      descriptionPlaceholder: "हमें इस व्यंजन के बारे में बताएं...",
+      urlPlaceholder: "https://..."
+    }
+  },
+  ur: {
+    dir: 'rtl',
+    nav: {
+      menu: 'مینو',
+      about: 'ہمارے بارے میں',
+      order: 'ابھی آرڈر کریں',
+      home: 'ہوم'
+    },
+    hero: {
+      title: 'گھر جیسا کھانا،',
+      subtitle: 'تازہ تیار شدہ شمالی ہندوستانی آرام دہ کھانا براہ راست آپ تک پہنچایا جاتا ہے۔',
+      orderBtn: 'ابھی آرڈر کریں',
+      menuBtn: 'مینو دیکھیں'
+    },
+    features: {
+      sectionTitle: 'لوگ روزانہ کچن کو کیوں پسند کرتے ہیں',
+      f1Title: 'ہوم اسٹائل کوکنگ',
+      f1Desc: 'روزمرہ کے ہندوستانی کچن سے متاثر ترکیبیں، محبت اور روایتی مصالحوں کے ساتھ بنائی گئیں۔',
+      f2Title: 'آپ کے ذائقہ کے مطابق',
+      f2Desc: 'تازہ اجزاء بالکل ویسے ہی تیار کیے جاتے ہیں جیسے آپ پسند کرتے ہیں۔ کوئی منجمد شارٹ کٹ نہیں، بس خالص ذائقہ۔',
+      f3Title: 'شیئر کرنے کے لیے بنایا گیا',
+      f3Desc: 'مزیدار، اعلیٰ معیار کا کھانا لوگوں کو ایک ساتھ لانے کے لیے ڈیزائن کیا گیا ہے۔'
+    },
+    menu: {
+      sectionTitle: 'روزانہ پیار کے ساتھ',
+      sectionSubtitle: 'ہمارے سب سے زیادہ آرڈر کیے جانے والے پکوان جو آپ کے دسترخوان پر گھر کا ذائقہ لاتے ہیں۔',
+      viewFull: 'پورا مینو دیکھیں',
+      showLess: 'کم دکھائیں',
+      readMore: 'مزید پڑھیں'
+    },
+    about: {
+      label: 'ہماری وراثت',
+      title: 'روزانہ کچن کی کہانی',
+      p1: 'روزانہ متحدہ عرب امارات میں پروان چڑھا ہے، ہم نے بزنس بے کی چہل پہل سے لے کر عجمان کے ساحلوں کے سکون تک دیکھا ہے۔ ایک ٹیم کے طور پر ہم کھانے کے شوقین ہیں اور "ذائقہ" کے فن کے دیوانے ہیں۔',
+      p2: 'یہ دیکھتے ہوئے کہ مارکیٹ میں کوئی ایسا نہیں ہے جو شمالی ہندوستانی ذائقہ فراہم کر سکے جیسا کہ ہماری ماں بناتی تھیں، ہم نے متحدہ عرب امارات کی ماؤں سے کچھ منتخب ترکیبیں تیار کیں اور روزانہ کچن بنایا۔',
+      videoLabel: 'ہاتھ سے بنا',
+      videoSub: 'محبت اور مصالحوں کے ساتھ'
+    },
+    testimonials: {
+      label: 'تاثرات',
+      title: 'ہمارے گاہک کیا کہتے ہیں',
+      verified: 'تصدیق شدہ گاہک'
+    },
+    cta: {
+      title: 'آرڈر کرنے کے لیے تیار ہیں؟ ہم قریب ہی ہیں!',
+      subtitle: 'ان ہزاروں خوش گاہکوں میں شامل ہوں جو ہر روز تازہ، گھر جیسا کھانا کھاتے ہیں۔ ابھی آرڈر کریں اور اپنا پہلا کھانا 30 منٹ میں حاصل کریں۔',
+      orderBtn: 'ابھی آرڈر کریں',
+      partners: 'ہمارے ڈیلیوری پارٹنرز',
+      available: 'ابھی دستیاب ہے',
+      soon: 'جلد آرہا ہے'
+    },
+    footer: {
+      desc: 'شمالی ہندوستانی گھر جیسا کھانا کا اصل ذائقہ آپ کے دہلیز تک پہنچانا۔ ہر دن تازہ، صحت مند اور مزیدار کھانا۔',
+      quickLinks: 'فوری لنکس',
+      followUs: 'ہمیں فالو کریں',
+      login: 'لاگ ان',
+      copyright: '© 2026 روزانہ کچن۔ جملہ حقوق محفوظ ہیں۔ ہوم اسٹائل ہندوستانی کھانا۔'
+    },
+    admin: {
+      dashboard: 'ایڈمن ڈیش بورڈ',
+      welcome: 'خوش آمدید، روزانہ ایڈمن',
+      logout: 'لاگ آؤٹ',
+      foodMenu: 'فوڈ مینو',
+      heroSlider: 'ہیرو سلائیڈر',
+      socialLinks: 'سوشل لنکس',
+      addDish: 'نیا پکوان شامل کریں',
+      editDish: 'پکوان تبدیل کریں',
+      dishName: 'پکوان کا نام',
+      price: 'قیمت',
+      imageUpload: 'تصویر اپ لوڈ',
+      rating: 'ریٹنگ',
+      order: 'ترتیب',
+      description: 'تفصیل',
+      saveDish: 'پکوان محفوظ کریں',
+      updateDish: 'پکوان اپ ڈیٹ کریں',
+      cancel: 'منسوخ کریں',
+      currentItems: 'موجودہ مینو آئٹمز',
+      addSlide: 'سلائیڈر تصویر شامل کریں',
+      editSlide: 'سلائیڈر تصویر تبدیل کریں',
+      displayOrder: 'ڈسپلے ترتیب',
+      saveImage: 'تصویر محفوظ کریں',
+      updateImage: 'تصویر اپ ڈیٹ کریں',
+      addSocial: 'سوشل لنک شامل کریں',
+      editSocial: 'سوشل لنک تبدیل کریں',
+      platform: 'پلیٹ فارم',
+      profileUrl: 'پروفائل یو آر ایل',
+      saveLink: 'لنک محفوظ کریں',
+      updateLink: 'لنک اپ ڈیٹ کریں',
+      currentSocial: 'موجودہ سوشل لنکس',
+      loginTitle: 'ایڈمن رسائی',
+      loginDesc: 'روزانہ کچن کے انتظام کے لیے براہ کرم اپنی اسناد درج کریں۔',
+      username: 'یوزر نیم',
+      password: 'پاس ورڈ',
+      loginBtn: 'لاگ ان',
+      backToWeb: 'ویب سائٹ پر واپس جائیں',
+      saving: "محفوظ ہو رہا ہے...",
+      imageReady: "✓ تصویر تیار ہے",
+      dishNamePlaceholder: "مثال کے طور پر: چکن بریانی",
+      pricePlaceholder: "مثال کے طور پر: AED 35",
+      descriptionPlaceholder: "ہمیں اس ڈش کے بارے میں بتائیں...",
+      urlPlaceholder: "https://..."
+    }
+  }
+};

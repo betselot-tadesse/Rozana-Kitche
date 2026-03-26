@@ -7,37 +7,53 @@ import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, ChevronRight, ChevronDown, Star, Clock, Utensils, Heart, Quote, Mail, Phone, MapPin, Plus, Trash2, Edit2, LogIn, LogOut, Settings, Save, Image as ImageIcon, Share2, Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { 
-  auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
+import { auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, addDoc, serverTimestamp 
 } from "./firebase";
+import { Language, translations } from "./translations";
 
-const Logo = ({ className = "", light = false }) => (
-  <div className={`inline-flex flex-col items-center justify-center leading-none ${className}`}>
-    <span className={`font-serif text-3xl md:text-4xl font-bold italic ${light ? 'text-white' : 'text-brand-dark'}`}>
-      Rozana
-    </span>
-    <div className="flex items-center gap-2 w-full mt-1">
-      <div className={`h-[1px] flex-grow ${light ? 'bg-white/30' : 'bg-brand-dark/30'}`}></div>
-      <span className={`text-[10px] md:text-[12px] font-bold tracking-[0.3em] uppercase ${light ? 'text-white/80' : 'text-brand-dark/80'}`}>
-        Kitchen
+const LanguageContext = React.createContext<{
+  lang: Language;
+  setLang: (lang: Language) => void;
+  t: typeof translations.en;
+}>({
+  lang: 'en',
+  setLang: () => {},
+  t: translations.en
+});
+
+const useLanguage = () => React.useContext(LanguageContext);
+
+const Logo = ({ className = "", light = false }) => {
+  const { lang } = useLanguage();
+  return (
+    <div className={`inline-flex flex-col items-center justify-center leading-none ${className}`}>
+      <span className={`font-serif text-3xl md:text-4xl font-bold italic ${light ? 'text-white' : 'text-brand-dark'}`}>
+        {lang === 'ar' ? 'روزانا' : lang === 'ur' ? 'روزانہ' : lang === 'hi' ? 'रोज़ाना' : 'Rozana'}
       </span>
-      <div className={`h-[1px] flex-grow ${light ? 'bg-white/30' : 'bg-brand-dark/30'}`}></div>
+      <div className="flex items-center gap-2 w-full mt-1">
+        <div className={`h-[1px] flex-grow ${light ? 'bg-white/30' : 'bg-brand-dark/30'}`}></div>
+        <span className={`text-[10px] md:text-[12px] font-bold tracking-[0.3em] uppercase ${light ? 'text-white/80' : 'text-brand-dark/80'}`}>
+          {lang === 'ar' || lang === 'ur' ? 'مطبخ' : lang === 'hi' ? 'किचन' : 'Kitchen'}
+        </span>
+        <div className={`h-[1px] flex-grow ${light ? 'bg-white/30' : 'bg-brand-dark/30'}`}></div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useLanguage();
   const location = useLocation();
   const isHomePage = location.pathname === "/";
 
   const navLinks = isHomePage ? [
-    { name: "Menu", href: "#menu" },
-    { name: "About", href: "#about" },
-    { name: "Order Now", href: "#order", cta: true }
+    { name: t.nav.menu, href: "#menu" },
+    { name: t.nav.about, href: "#about" },
+    { name: t.nav.order, href: "#order", cta: true }
   ] : [
-    { name: "Home", href: "/" },
+    { name: t.nav.home, href: "/" },
   ];
 
   return (
@@ -49,6 +65,7 @@ const Navbar = () => {
         
         {/* Desktop Links */}
         <div className="hidden md:flex items-center space-x-8">
+
           {navLinks.map((link) => (
             link.cta ? (
               <a key={link.name} href={link.href} className="bg-brand-dark text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-brand-primary transition-all shadow-md">
@@ -65,9 +82,11 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Toggle */}
-        <button className="md:hidden text-brand-dark" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-4 md:hidden">
+          <button className="text-brand-dark" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -101,11 +120,12 @@ const Navbar = () => {
 };
 
 const Hero = () => {
+  const { t } = useLanguage();
   const languages = [
     { text: "Rozana", lang: "English" },
     { text: "रोज़ाना", lang: "Hindi" },
-    { text: "روزाना", lang: "Arabic" },
-    { text: "ਰੋਜ਼ਾਨਾ", lang: "Punjabi" }
+    { text: "روزانا", lang: "Arabic" },
+    { text: "روزانہ", lang: "Urdu" }
   ];
 
   const [sliderImages, setSliderImages] = useState<string[]>([
@@ -184,7 +204,7 @@ const Hero = () => {
           transition={{ duration: 0.8 }}
         >
           <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] mb-6">
-            Ghar Jaisa Khana,<br />
+            {t.hero.title}<br />
             <AnimatePresence mode="wait">
               <motion.span
                 key={langIndex}
@@ -199,14 +219,14 @@ const Hero = () => {
             </AnimatePresence>
           </h1>
           <p className="text-xl text-white/90 mb-10 max-w-lg leading-relaxed">
-            Freshly prepared North Indian comfort food delivered straight to you.
+            {t.hero.subtitle}
           </p>
           <div className="flex flex-wrap gap-4">
             <a href="#order" className="bg-white text-brand-dark px-8 py-4 rounded-full font-semibold flex items-center gap-2 hover:bg-brand-bg transition-all shadow-lg group">
-              Order Now <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              {t.hero.orderBtn} <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </a>
             <a href="#menu" className="border-2 border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/10 transition-all">
-              View Menu
+              {t.hero.menuBtn}
             </a>
           </div>
         </motion.div>
@@ -249,23 +269,24 @@ const Hero = () => {
 };
 
 const Features = () => {
+  const { t } = useLanguage();
   const features = [
     {
       icon: <Heart className="text-red-500" />,
-      title: "Home Style Cooking",
-      desc: "Recipes inspired by everyday Indian kitchens, made with love and traditional spices.",
+      title: t.features.f1Title,
+      desc: t.features.f1Desc,
       img: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=800&q=80"
     },
     {
       icon: <Clock className="text-brand-primary" />,
-      title: "Per your Taste",
-      desc: "Fresh ingredients prepared exactly how you like them. No frozen shortcuts, just pure taste.",
+      title: t.features.f2Title,
+      desc: t.features.f2Desc,
       img: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=800&q=80"
     },
     {
       icon: <Utensils className="text-amber-600" />,
-      title: "Made to share",
-      desc: "Delicious, high-quality meals designed to bring people together around the table.",
+      title: t.features.f3Title,
+      desc: t.features.f3Desc,
       img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80"
     }
   ];
@@ -273,7 +294,7 @@ const Features = () => {
   return (
     <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
-        <h2 className="text-4xl font-bold text-center text-brand-dark mb-16">Why People Love Rozana Kitchen</h2>
+        <h2 className="text-4xl font-bold text-center text-brand-dark mb-16">{t.features.sectionTitle}</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((f, i) => (
             <motion.div 
@@ -309,6 +330,7 @@ const Features = () => {
 
 const MenuCard = ({ item, index }: any) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <motion.div 
@@ -364,7 +386,7 @@ const MenuCard = ({ item, index }: any) => {
           onClick={() => setIsExpanded(!isExpanded)}
           className="mt-4 text-brand-primary text-xs font-bold flex items-center gap-1 hover:text-brand-dark transition-colors uppercase tracking-wider"
         >
-          {isExpanded ? "Show Less" : "Read More"}
+          {isExpanded ? t.menu.showLess : t.menu.readMore}
           <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
              <ChevronDown size={14} />
           </motion.div>
@@ -375,6 +397,7 @@ const MenuCard = ({ item, index }: any) => {
 };
 
 const MenuSection = () => {
+  const { t } = useLanguage();
   const [items, setItems] = useState<any[]>([
     {
       name: "Chicken Biryani",
@@ -414,11 +437,11 @@ const MenuSection = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
           <div>
-            <h2 className="text-4xl font-bold text-brand-dark mb-4">Rozana with Love</h2>
-            <p className="text-gray-600 max-w-md">Our most ordered dishes that bring the taste of home to your table.</p>
+            <h2 className="text-4xl font-bold text-brand-dark mb-4">{t.menu.sectionTitle}</h2>
+            <p className="text-gray-600 max-w-md">{t.menu.sectionSubtitle}</p>
           </div>
           <button className="text-brand-primary font-semibold flex items-center gap-2 hover:underline">
-            View Full Menu <ChevronRight size={18} />
+            {t.menu.viewFull} <ChevronRight size={18} />
           </button>
         </div>
 
@@ -433,6 +456,7 @@ const MenuSection = () => {
 };
 
 const About = () => {
+  const { t } = useLanguage();
   return (
     <section id="about" className="py-24 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
@@ -444,15 +468,15 @@ const About = () => {
           >
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-[2px] bg-brand-primary"></div>
-              <span className="text-brand-primary font-bold uppercase tracking-widest text-xs">Our Heritage</span>
+              <span className="text-brand-primary font-bold uppercase tracking-widest text-xs">{t.about.label}</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-brand-dark mb-8 leading-tight">The Story of Rozana Kitchen</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-brand-dark mb-8 leading-tight">{t.about.title}</h2>
             <div className="space-y-6 text-lg text-gray-600 leading-relaxed">
               <p>
-                Rozana has grown in the UAE, We have seen the hustle bustle of Business Bay to the calm of Ajman Beaches. We as a team are foodies and fanatics of the trade that is “Taste”.
+                {t.about.p1}
               </p>
               <p>
-                Seeing that there is none in the market who could provide North Indian flavours just like our mother cooked, we curated some handpicked recipes from the moms of the UAE and made Rozana Kitchen.
+                {t.about.p2}
               </p>
             </div>
           </motion.div>
@@ -479,8 +503,8 @@ const About = () => {
               </video>
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
               <div className="absolute bottom-8 left-8 text-white">
-                <p className="text-sm font-bold uppercase tracking-widest mb-1">Handcrafted</p>
-                <p className="text-2xl font-serif italic">With Love & Spices</p>
+                <p className="text-sm font-bold uppercase tracking-widest mb-1">{t.about.videoLabel}</p>
+                <p className="text-2xl font-serif italic">{t.about.videoSub}</p>
               </div>
             </div>
           </motion.div>
@@ -492,24 +516,25 @@ const About = () => {
 
 
 const Testimonials = () => {
+  const { t } = useLanguage();
   const reviews = [
     {
       name: "Anjali Sharma",
       text: "The Butter Chicken is exactly how my mom makes it. Truly ghar jaisa khana! It's become my weekend ritual.",
       rating: 5,
-      img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330"
+      img: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRwOfMwQzEe6iEJ4htHWzJd7ivHaC2xGax6JvnNOpv1qe3tv36x"
     },
     {
-      name: "Rahul Verma",
+      name: "Laxman Singh",
       text: "Fresh, hot, and delicious. My daily go-to for lunch at the office. The packaging is great and it always arrives on time.",
       rating: 5,
-      img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
+      img: "https://d2he8nskrbhxwq.cloudfront.net/upload/photos/2023/08/yZgOi2lcp8D2NiLaMgNQ_LaxmanSinghchouhan.jpeg"
     },
     {
       name: "Priya Iyer",
       text: "Finally found a place that doesn't use too much oil. Healthy, light, and incredibly tasty. Highly recommended!",
       rating: 5,
-      img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80"
+      img: "https://i.pinimg.com/originals/57/d8/09/57d809c016446ea2e5a218cb65596755.jpg"
     }
   ];
 
@@ -520,8 +545,8 @@ const Testimonials = () => {
       
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col items-center mb-12">
-          <span className="text-brand-primary font-bold uppercase tracking-[0.3em] text-xs mb-2">Testimonials</span>
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center">What Our Customers Say</h2>
+          <span className="text-brand-primary font-bold uppercase tracking-[0.3em] text-xs mb-2">{t.testimonials.label}</span>
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center">{t.testimonials.title}</h2>
         </div>
 
         <div className="flex flex-col md:flex-row gap-8">
@@ -550,7 +575,7 @@ const Testimonials = () => {
                 />
                 <div>
                   <span className="block font-bold text-white">{review.name}</span>
-                  <span className="text-xs text-white/40 uppercase tracking-widest">Verified Customer</span>
+                  <span className="text-xs text-white/40 uppercase tracking-widest">{t.testimonials.verified}</span>
                 </div>
               </div>
             </motion.div>
@@ -565,29 +590,30 @@ const Testimonials = () => {
 };
 
 const CTA = () => {
+  const { t } = useLanguage();
   const partners = [
     { 
       name: "Keeta", 
-      status: "Available Now", 
-      logo: "https://logo.clearbit.com/keeta.com",
+      status: t.cta.available, 
+      logo: "https://images.seeklogo.com/logo-png/64/1/keeta-logo-png_seeklogo-647664.png",
       color: "from-yellow-400 to-orange-500"
     },
     { 
       name: "Talabat", 
-      status: "Coming Soon", 
+      status: t.cta.soon, 
       logo: "https://www.google.com/s2/favicons?domain=talabat.com&sz=128",
       color: "from-orange-500 to-red-600"
     },
     { 
       name: "Noon Food", 
-      status: "Coming Soon", 
+      status: t.cta.soon, 
       logo: "https://www.google.com/s2/favicons?domain=noon.com&sz=128",
       color: "from-yellow-300 to-yellow-500"
     },
     { 
       name: "Careem", 
-      status: "Coming Soon", 
-      logo: "https://www.google.com/s2/favicons?domain=careem.com&sz=128",
+      status: t.cta.soon, 
+      logo: "https://play-lh.googleusercontent.com/h5yVKbsRAo8WWePHLbHtisPrilCU3SM-tBecXmAVEA_8qOXqCigrZNYJNnDn7Q9BYg",
       color: "from-green-400 to-emerald-600"
     },
   ];
@@ -615,25 +641,25 @@ const CTA = () => {
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-brand-primary/20 via-transparent to-transparent"></div>
         
         <div className="relative z-10">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">Ready to order? We are nearby!</h2>
+          <h2 className="text-3xl md:text-5xl font-bold mb-6">{t.cta.title}</h2>
           <p className="text-lg text-white/80 mb-10 max-w-2xl mx-auto">
-            Join thousands of happy customers who enjoy fresh, home-style meals every day. Order now and get your first meal delivered in 30 minutes.
+            {t.cta.subtitle}
           </p>
           <a 
             href="#" 
             className="inline-block bg-white text-brand-dark px-8 py-4 rounded-full text-lg font-bold hover:bg-brand-bg transition-all shadow-xl hover:-translate-y-1 mb-12"
           >
-            Order Now
+            {t.cta.orderBtn}
           </a>
 
           <div className="pt-12 border-t border-white/10">
-            <p className="text-sm uppercase tracking-[0.2em] text-white/40 mb-8 font-bold">Our Delivery Partners</p>
+            <p className="text-sm uppercase tracking-[0.2em] text-white/40 mb-8 font-bold">{t.cta.partners}</p>
             <div className="flex flex-wrap justify-center items-center gap-6 md:gap-12">
               {partners.map((p, i) => (
                 <div key={i} className="flex flex-col items-center gap-3 group">
-                  <div className={`relative p-1 rounded-2xl transition-all duration-500 ${p.status === 'Available Now' ? 'scale-110' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-70'}`}>
+                  <div className={`relative p-1 rounded-2xl transition-all duration-500 ${p.status === t.cta.available ? 'scale-110' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-70'}`}>
                     {/* Gradient Border for active */}
-                    {p.status === 'Available Now' && (
+                    {p.status === t.cta.available && (
                       <div className={`absolute -inset-0.5 bg-gradient-to-r ${p.color} rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse`}></div>
                     )}
                     
@@ -655,13 +681,13 @@ const CTA = () => {
                       />
                     </div>
 
-                    {p.status === 'Coming Soon' && (
+                    {p.status === t.cta.soon && (
                       <div className="absolute -top-2 -right-2 bg-brand-dark/80 backdrop-blur-sm text-white/60 text-[8px] font-bold px-2 py-1 rounded-full border border-white/10 shadow-lg uppercase tracking-tighter">
-                        Soon
+                        {t.cta.soon.replace("Coming ", "")}
                       </div>
                     )}
                   </div>
-                  <span className={`text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors duration-300 ${p.status === 'Available Now' ? 'text-white' : 'text-white/20'}`}>
+                  <span className={`text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors duration-300 ${p.status === t.cta.available ? 'text-white' : 'text-white/20'}`}>
                     {p.name}
                   </span>
                 </div>
@@ -812,6 +838,7 @@ const CTA = () => {
 
 const Footer = () => {
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, "social"), orderBy("order", "asc")), (snap) => {
@@ -826,20 +853,20 @@ const Footer = () => {
         <div className="col-span-2">
           <Logo light className="mb-6 scale-110 origin-left" />
           <p className="max-w-sm leading-relaxed">
-            Bringing the authentic taste of North Indian home-style cooking to your doorstep. Fresh, healthy, and delicious meals, every single day.
+            {t.footer.desc}
           </p>
         </div>
         <div>
-          <h4 className="text-white font-bold mb-6">Quick Links</h4>
+          <h4 className="text-white font-bold mb-6">{t.footer.quickLinks}</h4>
           <ul className="space-y-4">
-            <li><a href="#menu" className="hover:text-white transition-colors">Menu</a></li>
-            <li><a href="#about" className="hover:text-white transition-colors">About Us</a></li>
-            <li><a href="#order" className="hover:text-white transition-colors">Order Now</a></li>
+            <li><a href="#menu" className="hover:text-white transition-colors">{t.nav.menu}</a></li>
+            <li><a href="#about" className="hover:text-white transition-colors">{t.nav.about}</a></li>
+            <li><a href="#order" className="hover:text-white transition-colors">{t.nav.order}</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
           </ul>
         </div>
         <div>
-          <h4 className="text-white font-bold mb-6">Follow Us</h4>
+          <h4 className="text-white font-bold mb-6">{t.footer.followUs}</h4>
           <ul className="space-y-4">
             {socialLinks.length > 0 ? (
               socialLinks.map(link => (
@@ -868,18 +895,19 @@ const Footer = () => {
                 <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
               </>
             )}
-            <li><Link to="/admin" className="hover:text-white transition-colors">Login</Link></li>
+            <li><Link to="/admin" className="hover:text-white transition-colors">{t.footer.login}</Link></li>
           </ul>
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-white/10 text-center text-sm">
-        <p>© 2026 Rozana Kitchen. All rights reserved. Home Style Indian Meals.</p>
+        <p>{t.footer.copyright}</p>
       </div>
     </footer>
   );
 };
 
 const AdminPanel = () => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"menu" | "slider" | "social">("menu");
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [sliderImages, setSliderImages] = useState<any[]>([]);
@@ -1060,12 +1088,12 @@ const AdminPanel = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg p-6 text-center">
       <div className="bg-white p-12 rounded-[3rem] shadow-2xl max-w-md w-full border border-black/5">
         <Logo className="mb-8" />
-        <h2 className="text-3xl font-bold text-brand-dark mb-4">Admin Access</h2>
-        <p className="text-gray-600 mb-8 leading-relaxed">Please enter your credentials to manage Rozana Kitchen.</p>
+        <h2 className="text-3xl font-bold text-brand-dark mb-4">{t.admin.loginTitle}</h2>
+        <p className="text-gray-600 mb-8 leading-relaxed">{t.admin.loginDesc}</p>
         
         <form onSubmit={handleLogin} className="space-y-4 text-left">
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Username</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.username}</label>
             <input 
               type="text" 
               required 
@@ -1075,7 +1103,7 @@ const AdminPanel = () => {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Password</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.password}</label>
             <input 
               type="password" 
               required 
@@ -1089,12 +1117,12 @@ const AdminPanel = () => {
             type="submit"
             className="w-full bg-brand-dark text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-primary transition-all shadow-lg flex items-center justify-center gap-3"
           >
-            <LogIn size={24} /> Login
+            <LogIn size={24} /> {t.admin.loginBtn}
           </button>
         </form>
 
         <Link to="/" className="inline-block mt-8 text-sm font-bold text-brand-primary hover:underline uppercase tracking-widest">
-          Back to Website
+          {t.admin.backToWeb}
         </Link>
       </div>
     </div>
@@ -1110,8 +1138,8 @@ const AdminPanel = () => {
                 <Settings size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">Admin Dashboard</h2>
-                <p className="text-white/60 text-sm">Welcome back, Rozana Admin</p>
+                <h2 className="text-2xl font-bold">{t.admin.dashboard}</h2>
+                <p className="text-white/60 text-sm">{t.admin.welcome}</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -1119,7 +1147,7 @@ const AdminPanel = () => {
                 onClick={handleLogout}
                 className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all text-sm font-bold"
               >
-                <LogOut size={18} /> Logout
+                <LogOut size={18} /> {t.admin.logout}
               </button>
               <Link to="/" className="p-3 hover:bg-white/10 rounded-full transition-colors">
                 <X size={24} />
@@ -1132,19 +1160,19 @@ const AdminPanel = () => {
               onClick={() => setActiveTab("menu")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'menu' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
-              Food Menu
+              {t.admin.foodMenu}
             </button>
             <button 
               onClick={() => setActiveTab("slider")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'slider' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
-              Hero Slider
+              {t.admin.heroSlider}
             </button>
             <button 
               onClick={() => setActiveTab("social")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'social' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
-              Social Links
+              {t.admin.socialLinks}
             </button>
           </div>
 
@@ -1154,51 +1182,51 @@ const AdminPanel = () => {
                 <form onSubmit={handleAddMenuItem} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
                   <h3 className="font-bold text-xl flex items-center gap-3">
                     {editingId ? <Edit2 size={24} className="text-brand-primary" /> : <Plus size={24} className="text-brand-primary" />} 
-                    {editingId ? "Edit Dish" : "Add New Dish"}
+                    {editingId ? t.admin.editDish : t.admin.addDish}
                   </h3>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Dish Name</label>
-                      <input required placeholder="e.g. Chicken Biryani" className="admin-input" value={newItem.name || ""} onChange={e => setNewItem({...newItem, name: e.target.value})} />
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.dishName}</label>
+                      <input required placeholder={t.admin.dishNamePlaceholder} className="admin-input" value={newItem.name || ""} onChange={e => setNewItem({...newItem, name: e.target.value})} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Price</label>
-                      <input required placeholder="e.g. AED 35" className="admin-input" value={newItem.price || ""} onChange={e => setNewItem({...newItem, price: e.target.value})} />
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.price}</label>
+                      <input required placeholder={t.admin.pricePlaceholder} className="admin-input" value={newItem.price || ""} onChange={e => setNewItem({...newItem, price: e.target.value})} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Image Upload</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
                       <input ref={menuFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "menu")} />
-                      {newItem.img && <p className="text-[10px] text-green-600 font-bold">✓ Image Ready</p>}
+                      {newItem.img && <p className="text-[10px] text-green-600 font-bold">{t.admin.imageReady}</p>}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Rating</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.rating}</label>
                         <input type="number" step="0.1" max="5" min="1" className="admin-input" value={newItem.rating ?? 5} onChange={e => setNewItem({...newItem, rating: Number(e.target.value)})} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Order</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.order}</label>
                         <input type="number" className="admin-input" value={newItem.order ?? 0} onChange={e => setNewItem({...newItem, order: Number(e.target.value)})} />
                       </div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Description</label>
-                    <textarea required placeholder="Tell us about this dish..." className="admin-input w-full h-32 resize-none" value={newItem.desc || ""} onChange={e => setNewItem({...newItem, desc: e.target.value})} />
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.description}</label>
+                    <textarea required placeholder={t.admin.descriptionPlaceholder} className="admin-input w-full h-32 resize-none" value={newItem.desc || ""} onChange={e => setNewItem({...newItem, desc: e.target.value})} />
                   </div>
                   <div className="flex gap-4">
                     <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
-                      {loading ? "Saving..." : <><Save size={24} /> {editingId ? "Update Dish" : "Save Dish"}</>}
+                      {loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateDish : t.admin.saveDish}</>}
                     </button>
                     {editingId && (
                       <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
-                        Cancel
+                        {t.admin.cancel}
                       </button>
                     )}
                   </div>
                 </form>
 
                 <div className="space-y-6">
-                  <h3 className="font-bold text-xl">Current Menu Items</h3>
+                  <h3 className="font-bold text-xl">{t.admin.currentItems}</h3>
                   <div className="grid md:grid-cols-2 gap-6">
                     {menuItems.map(item => (
                       <div key={item.id} className="flex items-center gap-6 p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all group">
@@ -1208,7 +1236,7 @@ const AdminPanel = () => {
                         <div className="flex-1">
                           <p className="font-bold text-brand-dark text-lg">{item.name}</p>
                           <p className="text-sm text-brand-primary font-bold">{item.price}</p>
-                          <p className="text-xs text-gray-400 mt-1">Order: {item.order} • Rating: {item.rating}</p>
+                          <p className="text-xs text-gray-400 mt-1">{t.admin.order}: {item.order} • {t.admin.rating}: {item.rating}</p>
                         </div>
                         <div className="flex flex-col gap-2">
                           <button onClick={() => startEdit("menu", item)} className="p-3 text-brand-primary hover:bg-brand-bg rounded-2xl transition-colors">
@@ -1228,26 +1256,26 @@ const AdminPanel = () => {
                 <form onSubmit={handleAddSlide} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
                   <h3 className="font-bold text-xl flex items-center gap-3">
                     {editingId ? <Edit2 size={24} className="text-brand-primary" /> : <ImageIcon size={24} className="text-brand-primary" />} 
-                    {editingId ? "Edit Slider Image" : "Add Slider Image"}
+                    {editingId ? t.admin.editSlide : t.admin.addSlide}
                   </h3>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Image Upload</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
                       <input ref={sliderFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "slider")} />
-                      {newSlide.url && <p className="text-[10px] text-green-600 font-bold">✓ Image Ready</p>}
+                      {newSlide.url && <p className="text-[10px] text-green-600 font-bold">{t.admin.imageReady}</p>}
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Display Order</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.displayOrder}</label>
                       <input type="number" className="admin-input" value={newSlide.order ?? 0} onChange={e => setNewSlide({...newSlide, order: Number(e.target.value)})} />
                     </div>
                   </div>
                   <div className="flex gap-4">
                     <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
-                      {loading ? "Saving..." : <><Save size={24} /> {editingId ? "Update Image" : "Save Image"}</>}
+                      {loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateImage : t.admin.saveImage}</>}
                     </button>
                     {editingId && (
                       <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
-                        Cancel
+                        {t.admin.cancel}
                       </button>
                     )}
                   </div>
@@ -1266,7 +1294,7 @@ const AdminPanel = () => {
                         </button>
                       </div>
                       <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full">
-                        Order: {slide.order}
+                        {t.admin.order}: {slide.order}
                       </div>
                     </div>
                   ))}
@@ -1277,11 +1305,11 @@ const AdminPanel = () => {
                 <form onSubmit={handleAddSocial} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
                   <h3 className="font-bold text-xl flex items-center gap-3">
                     {editingId ? <Edit2 size={24} className="text-brand-primary" /> : <Share2 size={24} className="text-brand-primary" />} 
-                    {editingId ? "Edit Social Link" : "Add Social Link"}
+                    {editingId ? t.admin.editSocial : t.admin.addSocial}
                   </h3>
                   <div className="grid md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Platform</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.platform}</label>
                       <select 
                         className="admin-input w-full" 
                         value={newSocial.platform || "facebook"} 
@@ -1295,17 +1323,17 @@ const AdminPanel = () => {
                       </select>
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Profile URL</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.profileUrl}</label>
                       <input 
                         required 
-                        placeholder="https://..." 
+                        placeholder={t.admin.urlPlaceholder} 
                         className="admin-input" 
                         value={newSocial.url || ""} 
                         onChange={e => setNewSocial({...newSocial, url: e.target.value})} 
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Display Order</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.displayOrder}</label>
                       <input 
                         type="number" 
                         className="admin-input" 
@@ -1316,18 +1344,18 @@ const AdminPanel = () => {
                   </div>
                   <div className="flex gap-4">
                     <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
-                      {loading ? "Saving..." : <><Save size={24} /> {editingId ? "Update Link" : "Save Link"}</>}
+                      {loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateLink : t.admin.saveLink}</>}
                     </button>
                     {editingId && (
                       <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
-                        Cancel
+                        {t.admin.cancel}
                       </button>
                     )}
                   </div>
                 </form>
 
                 <div className="space-y-6">
-                  <h3 className="font-bold text-xl">Current Social Links</h3>
+                  <h3 className="font-bold text-xl">{t.admin.currentSocial}</h3>
                   <div className="grid md:grid-cols-2 gap-6">
                     {socialLinks.map(link => (
                       <div key={link.id} className="flex items-center gap-6 p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all group">
@@ -1376,16 +1404,35 @@ const HomePage = () => (
 );
 
 export default function App() {
+  const [lang, setLang] = useState<Language>(() => {
+    const saved = localStorage.getItem("rozana_lang");
+    return (saved as Language) || 'en';
+  });
+
+  useEffect(() => {
+    localStorage.setItem("rozana_lang", lang);
+    document.documentElement.dir = translations[lang].dir;
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  const value = {
+    lang,
+    setLang,
+    t: translations[lang]
+  };
+
   return (
-    <BrowserRouter>
-      <main className="font-sans">
-        <Navbar />
-        
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/admin" element={<AdminPanel />} />
-        </Routes>
-      </main>
-    </BrowserRouter>
+    <LanguageContext.Provider value={value}>
+      <BrowserRouter>
+        <main className="font-sans">
+          <Navbar />
+          
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/admin" element={<AdminPanel />} />
+          </Routes>
+        </main>
+      </BrowserRouter>
+    </LanguageContext.Provider>
   );
 }
