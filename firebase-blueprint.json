@@ -43,6 +43,19 @@
         "order": { "type": "integer", "description": "Display order" }
       },
       "required": ["platform", "url"]
+    },
+    "Feature": {
+      "title": "Feature",
+      "description": "A 'Why Choose Us' feature item",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Feature title" },
+        "desc": { "type": "string", "description": "Feature description" },
+        "img": { "type": "string", "description": "Image URL" },
+        "icon": { "type": "string", "enum": ["Heart", "Clock", "Utensils", "Star", "Mail", "Phone", "MapPin"], "description": "Lucide icon name" },
+        "order": { "type": "integer", "description": "Display order" }
+      },
+      "required": ["title", "desc", "img", "icon"]
     }
   },
   "firestore": {
@@ -61,6 +74,10 @@
     "social": {
       "schema": "SocialLink",
       "description": "Collection of social media links"
+    },
+    "features": {
+      "schema": "Feature",
+      "description": "Collection of 'Why Choose Us' features"
     }
   }
 }

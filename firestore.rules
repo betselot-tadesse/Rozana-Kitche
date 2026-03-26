@@ -71,5 +71,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true; // Relaxed for custom admin panel in dev environment
     }
+
+    match /features/{featureId} {
+      allow read: if true;
+      allow write: if true; // Relaxed for custom admin panel in dev environment
+    }
   }
 }

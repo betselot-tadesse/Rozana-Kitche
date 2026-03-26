@@ -270,7 +270,7 @@ const Hero = () => {
 
 const Features = () => {
   const { t } = useLanguage();
-  const features = [
+  const [features, setFeatures] = useState<any[]>([
     {
       icon: <Heart className="text-red-500" />,
       title: t.features.f1Title,
@@ -289,7 +289,30 @@ const Features = () => {
       desc: t.features.f3Desc,
       img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80"
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(query(collection(db, "features"), orderBy("order", "asc")), (snapshot) => {
+      if (!snapshot.empty) {
+        const featureItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setFeatures(featureItems);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case "Heart": return <Heart className="text-red-500" />;
+      case "Clock": return <Clock className="text-brand-primary" />;
+      case "Utensils": return <Utensils className="text-amber-600" />;
+      case "Star": return <Star className="text-amber-500" />;
+      case "Mail": return <Mail className="text-brand-primary" />;
+      case "Phone": return <Phone className="text-brand-primary" />;
+      case "MapPin": return <MapPin className="text-brand-primary" />;
+      default: return <Heart className="text-red-500" />;
+    }
+  };
 
   return (
     <section className="py-24 bg-white">
@@ -298,7 +321,7 @@ const Features = () => {
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((f, i) => (
             <motion.div 
-              key={i}
+              key={f.id || i}
               whileHover={{ y: -10 }}
               className="bg-brand-bg rounded-3xl border border-black/5 transition-all overflow-hidden flex flex-col h-full"
             >
@@ -315,7 +338,7 @@ const Features = () => {
               </div>
               <div className="p-8 flex-grow">
                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-6">
-                  {f.icon}
+                  {f.id ? getIcon(f.icon) : f.icon}
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-brand-dark">{f.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{f.desc}</p>
@@ -912,6 +935,7 @@ const AdminPanel = () => {
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [sliderImages, setSliderImages] = useState<any[]>([]);
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
+  const [features, setFeatures] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -922,19 +946,16 @@ const AdminPanel = () => {
   const [newItem, setNewItem] = useState({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
   const [newSlide, setNewSlide] = useState({ url: "", order: 0 });
   const [newSocial, setNewSocial] = useState({ platform: "facebook", url: "", order: 0 });
+  const [newFeature, setNewFeature] = useState({ title: "", desc: "", img: "", icon: "Heart", order: 0 });
   
   // Edit states
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const menuFileRef = useRef<HTMLInputElement>(null);
   const sliderFileRef = useRef<HTMLInputElement>(null);
+  const featureFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const savedLogin = localStorage.getItem("rozana_admin_logged_in");
-    if (savedLogin === "true") {
-      setIsLoggedIn(true);
-    }
-
     const unsubMenu = onSnapshot(query(collection(db, "menu"), orderBy("order", "asc")), (snap) => {
       setMenuItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
@@ -944,14 +965,16 @@ const AdminPanel = () => {
     const unsubSocial = onSnapshot(query(collection(db, "social"), orderBy("order", "asc")), (snap) => {
       setSocialLinks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
-    return () => { unsubMenu(); unsubSlider(); unsubSocial(); };
+    const unsubFeatures = onSnapshot(query(collection(db, "features"), orderBy("order", "asc")), (snap) => {
+      setFeatures(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => { unsubMenu(); unsubSlider(); unsubSocial(); unsubFeatures(); };
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (loginForm.username === "rozana" && loginForm.password === "1061") {
       setIsLoggedIn(true);
-      localStorage.setItem("rozana_admin_logged_in", "true");
       setLoginError("");
     } else {
       setLoginError("Invalid username or password");
@@ -960,10 +983,9 @@ const AdminPanel = () => {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    localStorage.removeItem("rozana_admin_logged_in");
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "menu" | "slider") => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "menu" | "slider" | "feature") => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 1024 * 1024) {
@@ -975,8 +997,10 @@ const AdminPanel = () => {
         const base64String = reader.result as string;
         if (type === "menu") {
           setNewItem({ ...newItem, img: base64String });
-        } else {
+        } else if (type === "slider") {
           setNewSlide({ ...newSlide, url: base64String });
+        } else {
+          setNewFeature({ ...newFeature, img: base64String });
         }
       };
       reader.readAsDataURL(file);
@@ -1042,7 +1066,27 @@ const AdminPanel = () => {
     setLoading(false);
   };
 
-  const startEdit = (type: "menu" | "slider" | "social", item: any) => {
+  const handleAddFeature = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFeature.img) {
+      alert("Please upload an image first!");
+      return;
+    }
+    setLoading(true);
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, "features", editingId), { ...newFeature, order: Number(newFeature.order) });
+        setEditingId(null);
+      } else {
+        await addDoc(collection(db, "features"), { ...newFeature, order: Number(newFeature.order) });
+      }
+      setNewFeature({ title: "", desc: "", img: "", icon: "Heart", order: 0 });
+      if (featureFileRef.current) featureFileRef.current.value = "";
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const startEdit = (type: "menu" | "slider" | "social" | "feature", item: any) => {
     setEditingId(item.id);
     if (type === "menu") {
       setNewItem({ 
@@ -1060,13 +1104,22 @@ const AdminPanel = () => {
         order: item.order ?? 0 
       });
       setActiveTab("slider");
-    } else {
+    } else if (type === "social") {
       setNewSocial({ 
         platform: item.platform || "facebook", 
         url: item.url || "", 
         order: item.order ?? 0 
       });
       setActiveTab("social");
+    } else {
+      setNewFeature({
+        title: item.title || "",
+        desc: item.desc || "",
+        img: item.img || "",
+        icon: item.icon || "Heart",
+        order: item.order ?? 0
+      });
+      setActiveTab("features" as any);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1076,6 +1129,7 @@ const AdminPanel = () => {
     setNewItem({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
     setNewSlide({ url: "", order: 0 });
     setNewSocial({ platform: "facebook", url: "", order: 0 });
+    setNewFeature({ title: "", desc: "", img: "", icon: "Heart", order: 0 });
   };
 
   const handleDelete = async (coll: string, id: string) => {
@@ -1173,6 +1227,12 @@ const AdminPanel = () => {
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'social' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
               {t.admin.socialLinks}
+            </button>
+            <button 
+              onClick={() => setActiveTab("features" as any)}
+              className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === ('features' as any) ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
+            >
+              {t.admin.features}
             </button>
           </div>
 
@@ -1298,6 +1358,77 @@ const AdminPanel = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            ) : activeTab === ("features" as any) ? (
+              <div className="space-y-12">
+                <form onSubmit={handleAddFeature} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
+                  <h3 className="font-bold text-xl flex items-center gap-3">
+                    {editingId ? <Edit2 size={24} className="text-brand-primary" /> : <Plus size={24} className="text-brand-primary" />} 
+                    {editingId ? t.admin.editFeature : t.admin.addFeature}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.featureTitle}</label>
+                      <input required className="admin-input" value={newFeature.title || ""} onChange={e => setNewFeature({...newFeature, title: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.featureIcon}</label>
+                      <select className="admin-input" value={newFeature.icon || "Heart"} onChange={e => setNewFeature({...newFeature, icon: e.target.value})}>
+                        {["Heart", "Clock", "Utensils", "Star", "Mail", "Phone", "MapPin"].map(icon => (
+                          <option key={icon} value={icon}>{icon}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
+                      <input ref={featureFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "feature")} />
+                      {newFeature.img && <p className="text-[10px] text-green-600 font-bold">{t.admin.imageReady}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.order}</label>
+                      <input type="number" className="admin-input" value={newFeature.order ?? 0} onChange={e => setNewFeature({...newFeature, order: Number(e.target.value)})} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.description}</label>
+                    <textarea required className="admin-input w-full h-32 resize-none" value={newFeature.desc || ""} onChange={e => setNewFeature({...newFeature, desc: e.target.value})} />
+                  </div>
+                  <div className="flex gap-4">
+                    <button disabled={loading} type="submit" className="flex-1 bg-brand-primary text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl">
+                      {loading ? t.admin.saving : <><Save size={24} /> {editingId ? t.admin.updateFeature : t.admin.saveFeature}</>}
+                    </button>
+                    {editingId && (
+                      <button type="button" onClick={cancelEdit} className="px-8 bg-gray-200 text-gray-600 py-5 rounded-2xl font-bold text-lg hover:bg-gray-300 transition-all">
+                        {t.admin.cancel}
+                      </button>
+                    )}
+                  </div>
+                </form>
+
+                <div className="space-y-6">
+                  <h3 className="font-bold text-xl">{t.admin.currentFeatures}</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {features.map(f => (
+                      <div key={f.id} className="flex items-center gap-6 p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0">
+                          <img src={f.img} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-brand-dark text-lg">{f.title}</p>
+                          <p className="text-xs text-gray-400 mt-1">{t.admin.order}: {f.order} • {t.admin.featureIcon}: {f.icon}</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <button onClick={() => startEdit("feature", f)} className="p-3 text-brand-primary hover:bg-brand-bg rounded-2xl transition-colors">
+                            <Edit2 size={20} />
+                          </button>
+                          <button onClick={() => handleDelete("features", f.id)} className="p-3 text-red-500 hover:bg-red-50 rounded-2xl transition-colors">
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
