@@ -1084,7 +1084,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 512 * 1024) {
-        alert("File too large! Please upload an image smaller than 500KB.");
+        setToast("File too large! Please upload an image smaller than 500KB.");
         return;
       }
       const reader = new FileReader();
@@ -1123,14 +1123,14 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       console.error(err);
       setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "about");
-      alert("Error saving about section. Please try again.");
+      setToast("Error saving about section. Please try again.");
     }
   };
 
   const handleAddTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTestimonial.img && !editingId) {
-      alert("Please upload an image first!");
+      setToast("Please upload an image first!");
       return;
     }
     setLoading(true);
@@ -1154,14 +1154,14 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       console.error(err);
       setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "testimonials");
-      alert("Error saving testimonial. Please try again.");
+      setToast("Error saving testimonial. Please try again.");
     }
   };
 
   const handleAddMenuItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItem.img) {
-      alert("Please upload an image first!");
+    if (!newItem.img && !editingId) {
+      setToast("Please upload an image first!");
       return;
     }
     setLoading(true);
@@ -1185,14 +1185,14 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       console.error(err);
       setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "menu");
-      alert("Error saving dish. Please try again.");
+      setToast("Error saving dish. Please try again.");
     }
   };
 
   const handleAddSlide = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSlide.url) {
-      alert("Please upload an image first!");
+    if (!newSlide.url && !editingId) {
+      setToast("Please upload an image first!");
       return;
     }
     setLoading(true);
@@ -1216,14 +1216,14 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       console.error(err);
       setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "slider");
-      alert("Error saving slide. Please try again.");
+      setToast("Error saving slide. Please try again.");
     }
   };
 
   const handleAddSocial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSocial.url) {
-      alert("Please enter a URL!");
+      setToast("Please enter a URL!");
       return;
     }
     setLoading(true);
@@ -1246,14 +1246,14 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       console.error(err);
       setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "social");
-      alert("Error saving social link. Please try again.");
+      setToast("Error saving social link. Please try again.");
     }
   };
 
   const handleAddFeature = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFeature.img) {
-      alert("Please upload an image first!");
+    if (!newFeature.img && !editingId) {
+      setToast("Please upload an image first!");
       return;
     }
     setLoading(true);
@@ -1277,7 +1277,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       console.error(err);
       setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "features");
-      alert("Error saving feature. Please try again.");
+      setToast("Error saving feature. Please try again.");
     }
   };
 
@@ -1349,13 +1349,11 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
   };
 
   const handleDelete = async (coll: string, id: string) => {
-    if (confirm("Are you sure?")) {
-      try {
-        await deleteDoc(doc(db, coll, id));
-        setToast("Item deleted successfully!");
-      } catch (err) {
-        handleFirestoreError(err, OperationType.DELETE, `${coll}/${id}`);
-      }
+    try {
+      await deleteDoc(doc(db, coll, id));
+      setToast("Item deleted successfully!");
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `${coll}/${id}`);
     }
   };
 
