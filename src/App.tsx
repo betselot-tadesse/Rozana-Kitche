@@ -144,19 +144,32 @@ const Hero = () => {
       if (!snapshot.empty) {
         const images = snapshot.docs.map(doc => doc.data().url);
         setSliderImages(images);
+      } else {
+        // If empty, we can either keep defaults or set to empty. 
+        // Let's set to empty so the admin can see it's empty, 
+        // but maybe keep one default if we want something to show.
+        setSliderImages([]);
       }
+    }, (err) => {
+      console.error("Hero Slider Error:", err);
+      handleFirestoreError(err, OperationType.GET, "slider");
     });
 
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const langInterval = setInterval(() => {
       setLangIndex((prev) => (prev + 1) % languages.length);
     }, 3000);
     
     const sliderInterval = setInterval(() => {
-      setSliderIndex((prev) => (prev + 1) % sliderImages.length);
+      if (sliderImages.length > 0) {
+        setSliderIndex((prev) => (prev + 1) % sliderImages.length);
+      }
     }, 5000);
 
     return () => {
-      unsubscribe();
       clearInterval(langInterval);
       clearInterval(sliderInterval);
     };
@@ -238,7 +251,7 @@ const Hero = () => {
             <AnimatePresence mode="wait">
               <motion.img
                 key={sliderIndex}
-                src={sliderImages[sliderIndex]}
+                src={sliderImages[sliderIndex] || "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?auto=format&fit=crop&w=1200&q=80"}
                 initial={{ opacity: 0, scale: 1.1 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -998,7 +1011,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
 
   // Form states
   const [newItem, setNewItem] = useState({ name: "", desc: "", img: "", price: "", rating: 5, order: 0 });
-  const [newSlide, setNewSlide] = useState({ url: "", order: 0 });
+  const [newSlide, setNewSlide] = useState<{url: string, order: number}>({ url: "", order: 0 });
   const [newSocial, setNewSocial] = useState({ platform: "facebook", url: "", order: 0 });
   const [newFeature, setNewFeature] = useState({ title: "", desc: "", img: "", icon: "Heart", order: 0 });
   const [newAbout, setNewAbout] = useState({ title: "", p1: "", p2: "", videoUrl: "", label: "", sub: "" });
@@ -1066,11 +1079,19 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loginForm.username === "rozana" && loginForm.password === "1061") {
-      setIsLoggedIn(true);
-      setLoginError("");
+      try {
+        // Also sign in with Google to authenticate with Firebase
+        // This is needed for Firestore rules to allow writes
+        await signInWithPopup(auth, googleProvider);
+        setIsLoggedIn(true);
+        setLoginError("");
+      } catch (error) {
+        console.error("Firebase Auth Error:", error);
+        setLoginError("Failed to authenticate with Firebase. Please try again.");
+      }
     } else {
       setLoginError("Invalid username or password");
     }
@@ -1191,6 +1212,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
 
   const handleAddSlide = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Attempting to save slide:", newSlide, "Editing ID:", editingId);
     if (!newSlide.url && !editingId) {
       setToast("Please upload an image first!");
       return;
@@ -1198,22 +1220,30 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
     setLoading(true);
     setSaveSuccess(false);
     try {
+      const slideData = { 
+        url: newSlide.url, 
+        order: Number(newSlide.order || 0) 
+      };
+      
       if (editingId) {
-        await updateDoc(doc(db, "slider", editingId), { ...newSlide, order: Number(newSlide.order) });
+        console.log("Updating slide:", editingId, slideData);
+        await updateDoc(doc(db, "slider", editingId), slideData);
         setEditingId(null);
       } else {
-        await addDoc(collection(db, "slider"), { ...newSlide, order: Number(newSlide.order) });
+        console.log("Adding new slide:", slideData);
+        await addDoc(collection(db, "slider"), slideData);
       }
       setNewSlide({ url: "", order: 0 });
       if (sliderFileRef.current) sliderFileRef.current.value = "";
       setSaveSuccess(true);
       setToast("Slide saved successfully!");
+      console.log("Slide saved successfully!");
       setTimeout(() => {
         setSaveSuccess(false);
         setLoading(false);
       }, 1500);
     } catch (err) { 
-      console.error(err);
+      console.error("Error in handleAddSlide:", err);
       setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "slider");
       setToast("Error saving slide. Please try again.");
@@ -1574,7 +1604,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.displayOrder}</label>
-                      <input type="number" className="admin-input" value={newSlide.order ?? 0} onChange={e => setNewSlide({...newSlide, order: Number(e.target.value)})} />
+                      <input type="number" className="admin-input" value={newSlide.order} onChange={e => setNewSlide({...newSlide, order: Number(e.target.value)})} />
                     </div>
                   </div>
                   <div className="flex gap-4">
