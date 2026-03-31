@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, ChevronRight, ChevronDown, Star, Clock, Utensils, Heart, Quote, Mail, Phone, MapPin, Plus, Trash2, Edit2, LogIn, LogOut, Settings, Save, Image as ImageIcon, Share2, Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
+import { auth, db, googleProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged,
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, addDoc, serverTimestamp,
   handleFirestoreError, OperationType
 } from "./firebase";
@@ -988,6 +988,17 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [firebaseUser, setFirebaseUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
   useEffect(() => {
     // Reset login form when not logged in or when navigating to admin
     if (!isLoggedIn) {
@@ -1083,14 +1094,15 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
     e.preventDefault();
     if (loginForm.username === "rozana" && loginForm.password === "1061") {
       try {
-        // Also sign in with Google to authenticate with Firebase
-        // This is needed for Firestore rules to allow writes
-        await signInWithPopup(auth, googleProvider);
+        // Use anonymous authentication to allow Firestore writes without a popup
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
         setIsLoggedIn(true);
         setLoginError("");
-      } catch (error) {
+      } catch (error: any) {
         console.error("Firebase Auth Error:", error);
-        setLoginError("Failed to authenticate with Firebase. Please try again.");
+        setLoginError(`Authentication failed: ${error.message || "Unknown error"}. Please check your connection.`);
       }
     } else {
       setLoginError("Invalid username or password");
