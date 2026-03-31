@@ -55,6 +55,23 @@ service cloud.firestore {
     //   - img: string
     //   - order: number
     //
+    // Collection: content
+    // Document: contact
+    // Fields:
+    //   - phone: string
+    //   - email: string
+    //   - location: string
+    //   - weekdays: string
+    //   - weekends: string
+    //
+    // Collection: contact_messages
+    // Fields:
+    //   - name: string
+    //   - email: string
+    //   - subject: string
+    //   - message: string
+    //   - timestamp: timestamp
+    //
     // ===============================================================
 
     // Helper Functions
@@ -63,7 +80,12 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated();
+      return isAuthenticated() &&
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "thunderloop1@gmail.com" && request.auth.token.email_verified == true)
+        );
     }
 
     function isValidEmail(email) {
@@ -72,6 +94,10 @@ service cloud.firestore {
 
     function isValidUrl(url) {
       return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
     }
 
     // Collection Rules
@@ -108,6 +134,16 @@ service cloud.firestore {
     match /testimonials/{testimonialId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    match /content/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /contact_messages/{messageId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
     }
   }
 }

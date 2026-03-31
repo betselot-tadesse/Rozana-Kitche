@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, ChevronRight, ChevronDown, Star, Clock, Utensils, Heart, Quote, Mail, Phone, MapPin, Plus, Trash2, Edit2, LogIn, LogOut, Settings, Save, Image as ImageIcon, Share2, Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { auth, db, googleProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged,
+import { auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, addDoc, serverTimestamp,
   handleFirestoreError, OperationType
 } from "./firebase";
@@ -52,6 +52,7 @@ const Navbar = () => {
   const navLinks = isHomePage ? [
     { name: t.nav.menu, href: "#menu" },
     { name: t.nav.about, href: "#about" },
+    // { name: t.nav.contact, href: "#contact" },
     { name: t.nav.order, href: "#order", cta: true }
   ] : [
     { name: t.nav.home, href: "/" },
@@ -765,141 +766,207 @@ const CTA = () => {
   );
 };
 
-// const Contact = () => {
-//   return (
-//     <section id="contact" className="py-24 px-6 bg-brand-bg">
-//       <div className="max-w-7xl mx-auto">
-//         <div className="text-center mb-16">
-//           <motion.span 
-//             initial={{ opacity: 0, y: 10 }}
-//             whileInView={{ opacity: 1, y: 0 }}
-//             viewport={{ once: true }}
-//             className="text-brand-primary font-bold tracking-[0.2em] uppercase text-sm mb-4 block"
-//           >
-//             Get In Touch
-//           </motion.span>
-//           <motion.h2 
-//             initial={{ opacity: 0, y: 20 }}
-//             whileInView={{ opacity: 1, y: 0 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: 0.1 }}
-//             className="text-4xl md:text-5xl font-bold text-brand-dark"
-//           >
-//             Contact Us
-//           </motion.h2>
-//         </div>
-// 
-//         <div className="grid lg:grid-cols-2 gap-12 items-start">
-//           {/* Contact Info */}
-//           <motion.div 
-//             initial={{ opacity: 0, x: -30 }}
-//             whileInView={{ opacity: 1, x: 0 }}
-//             viewport={{ once: true }}
-//             className="space-y-8"
-//           >
-//             <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5">
-//               <h3 className="text-2xl font-bold text-brand-dark mb-6">Contact Information</h3>
-//               <div className="space-y-6">
-//                 <div className="flex items-start gap-4">
-//                   <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary shrink-0">
-//                     <Phone size={24} />
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-gray-400 uppercase tracking-wider font-bold mb-1">Phone</p>
-//                     <p className="text-lg font-medium text-brand-dark">+971 50 123 4567</p>
-//                   </div>
-//                 </div>
-//                 <div className="flex items-start gap-4">
-//                   <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary shrink-0">
-//                     <Mail size={24} />
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-gray-400 uppercase tracking-wider font-bold mb-1">Email</p>
-//                     <p className="text-lg font-medium text-brand-dark">hello@rozanakitchen.com</p>
-//                   </div>
-//                 </div>
-//                 <div className="flex items-start gap-4">
-//                   <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary shrink-0">
-//                     <MapPin size={24} />
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-gray-400 uppercase tracking-wider font-bold mb-1">Location</p>
-//                     <p className="text-lg font-medium text-brand-dark">Jumeirah Village Circle, Dubai, UAE</p>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-// 
-//             <div className="bg-brand-dark p-8 rounded-3xl shadow-xl text-white">
-//               <h3 className="text-2xl font-bold mb-4">Opening Hours</h3>
-//               <div className="space-y-3">
-//                 <div className="flex justify-between items-center">
-//                   <span className="text-white/60">Monday - Friday</span>
-//                   <span className="font-medium">11:00 AM - 11:00 PM</span>
-//                 </div>
-//                 <div className="flex justify-between items-center">
-//                   <span className="text-white/60">Saturday - Sunday</span>
-//                   <span className="font-medium">10:00 AM - 12:00 AM</span>
-//                 </div>
-//               </div>
-//             </div>
-//           </motion.div>
-// 
-//           {/* Contact Form */}
-//           <motion.div 
-//             initial={{ opacity: 0, x: 30 }}
-//             whileInView={{ opacity: 1, x: 0 }}
-//             viewport={{ once: true }}
-//             className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-black/5"
-//           >
-//             <form className="space-y-6">
-//               <div className="grid md:grid-cols-2 gap-6">
-//                 <div className="space-y-2">
-//                   <label className="text-sm font-bold text-brand-dark uppercase tracking-wider">Name</label>
-//                   <input 
-//                     type="text" 
-//                     placeholder="John Doe"
-//                     className="w-full px-6 py-4 bg-brand-bg rounded-2xl border-none focus:ring-2 focus:ring-brand-primary transition-all outline-none"
-//                   />
-//                 </div>
-//                 <div className="space-y-2">
-//                   <label className="text-sm font-bold text-brand-dark uppercase tracking-wider">Email</label>
-//                   <input 
-//                     type="email" 
-//                     placeholder="john@example.com"
-//                     className="w-full px-6 py-4 bg-brand-bg rounded-2xl border-none focus:ring-2 focus:ring-brand-primary transition-all outline-none"
-//                   />
-//                 </div>
-//               </div>
-//               <div className="space-y-2">
-//                 <label className="text-sm font-bold text-brand-dark uppercase tracking-wider">Subject</label>
-//                 <input 
-//                   type="text" 
-//                   placeholder="How can we help?"
-//                   className="w-full px-6 py-4 bg-brand-bg rounded-2xl border-none focus:ring-2 focus:ring-brand-primary transition-all outline-none"
-//                 />
-//               </div>
-//               <div className="space-y-2">
-//                 <label className="text-sm font-bold text-brand-dark uppercase tracking-wider">Message</label>
-//                 <textarea 
-//                   rows={4}
-//                   placeholder="Your message here..."
-//                   className="w-full px-6 py-4 bg-brand-bg rounded-2xl border-none focus:ring-2 focus:ring-brand-primary transition-all outline-none resize-none"
-//                 ></textarea>
-//               </div>
-//               <button 
-//                 type="submit"
-//                 className="w-full bg-brand-dark text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-primary transition-all shadow-lg hover:-translate-y-1"
-//               >
-//                 Send Message
-//               </button>
-//             </form>
-//           </motion.div>
-//         </div>
-//       </div>
-//     </section>
-//   );
-// };
+/* const Contact = () => {
+  const { t } = useLanguage();
+  const [contactInfo, setContactInfo] = useState({
+    phone: '+971 50 123 4567',
+    email: 'hello@rozanakitchen.com',
+    location: 'Jumeirah Village Circle, Dubai, UAE',
+    weekdays: '11:00 AM - 11:00 PM',
+    weekends: '10:00 AM - 12:00 AM'
+  });
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "content", "contact"), (doc) => {
+      if (doc.exists()) {
+        setContactInfo(doc.data() as any);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await addDoc(collection(db, "contact_messages"), {
+        ...formData,
+        timestamp: serverTimestamp()
+      });
+      setSubmitted(true);
+      setFormData({ name: '', email: '', subject: '', message: '' });
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <section id="contact" className="py-24 px-6 bg-brand-bg">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <motion.span 
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-brand-primary font-bold tracking-[0.2em] uppercase text-sm mb-4 block"
+          >
+            {t.contact.label}
+          </motion.span>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-5xl font-bold text-brand-dark"
+          >
+            {t.contact.title}
+          </motion.h2>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5">
+              <h3 className="text-2xl font-bold text-brand-dark mb-6">{t.contact.infoTitle}</h3>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary shrink-0">
+                    <Phone size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400 uppercase tracking-wider font-bold mb-1">{t.contact.phone}</p>
+                    <p className="text-lg font-medium text-brand-dark">{contactInfo.phone}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary shrink-0">
+                    <Mail size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400 uppercase tracking-wider font-bold mb-1">{t.contact.email}</p>
+                    <p className="text-lg font-medium text-brand-dark">{contactInfo.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary shrink-0">
+                    <MapPin size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400 uppercase tracking-wider font-bold mb-1">{t.contact.location}</p>
+                    <p className="text-lg font-medium text-brand-dark">{contactInfo.location}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-brand-dark p-8 rounded-3xl shadow-xl text-white">
+              <h3 className="text-2xl font-bold mb-4">{t.contact.hoursTitle}</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60">{t.contact.weekdays}</span>
+                  <span className="font-medium">{contactInfo.weekdays}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60">{t.contact.weekends}</span>
+                  <span className="font-medium">{contactInfo.weekends}</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-black/5"
+          >
+            {submitted ? (
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-12">
+                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                  <Save size={40} />
+                </div>
+                <h3 className="text-2xl font-bold text-brand-dark">Message Sent!</h3>
+                <p className="text-gray-500">Thank you for reaching out. We'll get back to you soon.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-brand-dark uppercase tracking-wider">{t.contact.formName}</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={formData.name || ""}
+                      onChange={(e) => setFormData({...formData, name: e.target.value || ""})}
+                      placeholder={t.contact.placeholders.name}
+                      className="w-full px-6 py-4 bg-brand-bg rounded-2xl border-none focus:ring-2 focus:ring-brand-primary transition-all outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-brand-dark uppercase tracking-wider">{t.contact.formEmail}</label>
+                    <input 
+                      type="email" 
+                      required
+                      value={formData.email || ""}
+                      onChange={(e) => setFormData({...formData, email: e.target.value || ""})}
+                      placeholder={t.contact.placeholders.email}
+                      className="w-full px-6 py-4 bg-brand-bg rounded-2xl border-none focus:ring-2 focus:ring-brand-primary transition-all outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-brand-dark uppercase tracking-wider">{t.contact.formSubject}</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.subject || ""}
+                    onChange={(e) => setFormData({...formData, subject: e.target.value || ""})}
+                    placeholder={t.contact.placeholders.subject}
+                    className="w-full px-6 py-4 bg-brand-bg rounded-2xl border-none focus:ring-2 focus:ring-brand-primary transition-all outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-brand-dark uppercase tracking-wider">{t.contact.formMessage}</label>
+                  <textarea 
+                    rows={4}
+                    required
+                    value={formData.message || ""}
+                    onChange={(e) => setFormData({...formData, message: e.target.value || ""})}
+                    placeholder={t.contact.placeholders.message}
+                    className="w-full px-6 py-4 bg-brand-bg rounded-2xl border-none focus:ring-2 focus:ring-brand-primary transition-all outline-none resize-none"
+                  ></textarea>
+                </div>
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-brand-dark text-white py-5 rounded-2xl font-bold text-lg hover:bg-brand-primary transition-all shadow-lg hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? t.admin.saving : t.contact.formSubmit}
+                </button>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}; */
 
 const Footer = () => {
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
@@ -927,7 +994,7 @@ const Footer = () => {
             <li><a href="#menu" className="hover:text-white transition-colors">{t.nav.menu}</a></li>
             <li><a href="#about" className="hover:text-white transition-colors">{t.nav.about}</a></li>
             <li><a href="#order" className="hover:text-white transition-colors">{t.nav.order}</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+            {/* <li><a href="#" className="hover:text-white transition-colors">Contact</a></li> */}
           </ul>
         </div>
         <div>
@@ -980,10 +1047,19 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
   const [features, setFeatures] = useState<any[]>([]);
   const [aboutData, setAboutData] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
+  /* const [contactInfo, setContactInfo] = useState({
+    phone: '',
+    email: '',
+    location: '',
+    weekdays: '',
+    weekends: ''
+  });
+  const [contactMessages, setContactMessages] = useState<any[]>([]); */
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<{ coll: string, id: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -1061,8 +1137,18 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       setTestimonials(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     }, (err) => handleFirestoreError(err, OperationType.GET, "testimonials"));
 
+    /* const unsubContact = onSnapshot(doc(db, "content", "contact"), (doc) => {
+      if (doc.exists()) {
+        setContactInfo(doc.data() as any);
+      }
+    }, (err) => handleFirestoreError(err, OperationType.GET, "content/contact"));
+
+    const unsubMessages = onSnapshot(query(collection(db, "contact_messages"), orderBy("timestamp", "desc")), (snap) => {
+      setContactMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => handleFirestoreError(err, OperationType.GET, "contact_messages")); */
+
     return () => { 
-      unsubMenu(); unsubSlider(); unsubSocial(); unsubFeatures(); unsubAbout(); unsubTestimonials();
+      unsubMenu(); unsubSlider(); unsubSocial(); unsubFeatures(); unsubAbout(); unsubTestimonials(); /* unsubContact(); unsubMessages(); */
     };
   }, []);
 
@@ -1085,31 +1171,40 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
         label: item.label || "",
         sub: item.sub || ""
       });
-    } else {
+    } else if (tab !== "contact") {
       setNewAbout({ title: "", p1: "", p2: "", videoUrl: "", label: "", sub: "" });
     }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginForm.username === "rozana" && loginForm.password === "1061") {
-      try {
-        // Use anonymous authentication to allow Firestore writes without a popup
-        if (!auth.currentUser) {
-          await signInAnonymously(auth);
-        }
-        setIsLoggedIn(true);
-        setLoginError("");
-      } catch (error: any) {
-        console.error("Firebase Auth Error:", error);
-        setLoginError(`Authentication failed: ${error.message || "Unknown error"}. Please check your connection.`);
-      }
+    // Support both original and suggested passwords
+    if (loginForm.username === "rozana" && (loginForm.password === "1061" || loginForm.password === "1234")) {
+      setIsLoggedIn(true);
+      setLoginError("");
+      setToast("Logged in successfully!");
     } else {
       setLoginError("Invalid username or password");
     }
   };
 
-  const handleLogout = () => {
+  const handleGoogleLogin = async () => {
+    try {
+      setLoginError("");
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result.user) {
+        setIsLoggedIn(true);
+        setLoginError("");
+        setToast("Logged in with Google!");
+      }
+    } catch (error: any) {
+      console.error("Google Login error:", error);
+      setLoginError("Google Login failed: " + error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
     setIsLoggedIn(false);
   };
 
@@ -1391,14 +1486,44 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
   };
 
   const handleDelete = async (coll: string, id: string) => {
-    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    setDeleteConfirm({ coll, id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    const { coll, id } = deleteConfirm;
     try {
       await deleteDoc(doc(db, coll, id));
       setToast("Item deleted successfully!");
+      setDeleteConfirm(null);
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `${coll}/${id}`);
+      setDeleteConfirm(null);
     }
   };
+
+  /* const handleSaveContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await setDoc(doc(db, "content", "contact"), contactInfo);
+      setSaveSuccess(true);
+      setToast("Contact info updated successfully!");
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, "content/contact");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteMessage = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "contact_messages", id));
+      setToast("Message deleted!");
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `contact_messages/${id}`);
+    }
+  }; */
 
   if (!isLoggedIn) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg p-6 text-center">
@@ -1439,6 +1564,23 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
           </button>
         </form>
 
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-white text-gray-500 uppercase tracking-widest font-bold">{t.admin.or}</span>
+          </div>
+        </div>
+
+        <button 
+          onClick={handleGoogleLogin}
+          className="w-full bg-white border-2 border-gray-100 text-brand-dark py-5 rounded-2xl font-bold text-lg hover:border-brand-primary transition-all shadow-sm flex items-center justify-center gap-3"
+        >
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
+          {t.admin.loginWithGoogle}
+        </button>
+
         <Link to="/" className="inline-block mt-8 text-sm font-bold text-brand-primary hover:underline uppercase tracking-widest">
           {t.admin.backToWeb}
         </Link>
@@ -1457,7 +1599,15 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
               </div>
               <div>
                 <h2 className="text-2xl font-bold">{t.admin.dashboard}</h2>
-                <p className="text-white/60 text-sm">{t.admin.welcome}</p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-white/60 text-sm">
+                    {firebaseUser ? `${t.admin.welcome}, ${firebaseUser.email || firebaseUser.displayName || 'Admin'}` : t.admin.welcome}
+                  </p>
+                  <div className="px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1.5 bg-green-500/20 text-green-300 border border-green-500/30">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                    CONNECTED
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -1510,6 +1660,12 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
             >
               {t.admin.testimonials || "Testimonials"}
             </button>
+            {/* <button 
+              onClick={() => setActiveTab("contact")}
+              className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'contact' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
+            >
+              {t.admin.contact || "Contact"}
+            </button> */}
           </div>
 
           <div className="flex-1 p-8 md:p-12 relative">
@@ -1853,7 +2009,83 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                   </div>
                 </form>
               </div>
-            ) : (
+            ) : /* activeTab === "contact" ? (
+              <div className="space-y-12">
+                <form onSubmit={handleSaveContact} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
+                  <h3 className="font-bold text-xl flex items-center gap-3">
+                    <Mail size={24} className="text-brand-primary" /> 
+                    {t.admin.contact}
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.phone}</label>
+                      <input required className="admin-input" value={contactInfo.phone || ""} onChange={e => setContactInfo({...contactInfo, phone: e.target.value || ""})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.email}</label>
+                      <input required className="admin-input" value={contactInfo.email || ""} onChange={e => setContactInfo({...contactInfo, email: e.target.value || ""})} />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.location}</label>
+                      <input required className="admin-input" value={contactInfo.location || ""} onChange={e => setContactInfo({...contactInfo, location: e.target.value || ""})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.weekdays}</label>
+                      <input required className="admin-input" value={contactInfo.weekdays || ""} onChange={e => setContactInfo({...contactInfo, weekdays: e.target.value || ""})} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.weekends}</label>
+                      <input required className="admin-input" value={contactInfo.weekends || ""} onChange={e => setContactInfo({...contactInfo, weekends: e.target.value || ""})} />
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <button disabled={loading} type="submit" className={`flex-1 py-5 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-xl ${saveSuccess ? 'bg-green-600 text-white' : 'bg-brand-primary text-white hover:bg-brand-dark'}`}>
+                      {saveSuccess ? <><Save size={24} /> {t.admin.saved}</> : loading ? t.admin.saving : <><Save size={24} /> {t.admin.saveContact}</>}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="space-y-6">
+                  <h3 className="font-bold text-xl flex items-center gap-3">
+                    <Mail size={24} className="text-brand-primary" /> 
+                    {t.admin.messages}
+                  </h3>
+                  <div className="space-y-4">
+                    {contactMessages.length > 0 ? (
+                      contactMessages.map(msg => (
+                        <div key={msg.id} className="p-6 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <p className="font-bold text-brand-dark">{msg.name}</p>
+                              <p className="text-xs text-brand-primary">{msg.email}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                {msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleString() : 'Just now'}
+                              </p>
+                              <button onClick={() => handleDeleteMessage(msg.id)} className="text-red-500 hover:text-red-600 transition-colors mt-2">
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="bg-brand-bg p-4 rounded-2xl">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t.admin.subject}</p>
+                            <p className="font-medium text-brand-dark mb-3">{msg.subject}</p>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t.admin.message}</p>
+                            <p className="text-sm text-gray-600 whitespace-pre-wrap">{msg.message}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-gray-200">
+                        <Mail size={48} className="mx-auto text-gray-200 mb-4" />
+                        <p className="text-gray-400 font-medium">{t.admin.noMessages}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : */ (
               <div className="space-y-12">
                 <form onSubmit={handleAddTestimonial} className="bg-brand-bg p-8 rounded-[2rem] border border-black/5 space-y-6">
                   <h3 className="font-bold text-xl flex items-center gap-3">
@@ -1926,6 +2158,45 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white p-8 rounded-[2.5rem] max-w-sm w-full shadow-2xl text-center border border-black/5"
+            >
+              <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trash2 size={40} />
+              </div>
+              <h3 className="text-2xl font-bold text-brand-dark mb-2">Are you sure?</h3>
+              <p className="text-gray-500 mb-8">This action cannot be undone. This item will be permanently removed from the database.</p>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 py-4 rounded-2xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 py-4 rounded-2xl font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -1937,6 +2208,7 @@ const HomePage = () => (
     <Testimonials />
     <MenuSection />
     <About />
+    {/* <Contact /> */}
     <CTA />
     <Footer />
   </>
