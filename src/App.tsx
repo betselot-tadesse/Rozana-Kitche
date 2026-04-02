@@ -1128,8 +1128,15 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
 
   useEffect(() => {
     // Sync Firebase Auth with local isLoggedIn state
+    // Only try anonymous login if NOT already logged in with a real user
     if (isLoggedIn && !auth.currentUser) {
-      signInAnonymously(auth).catch(err => console.error("Auto anonymous login failed:", err));
+      signInAnonymously(auth).catch(err => {
+        if (err.code === 'auth/admin-restricted-operation') {
+          console.warn("Anonymous authentication is disabled in Firebase Console. Please enable it or log in with Google to upload files.");
+        } else {
+          console.error("Auto anonymous login failed:", err);
+        }
+      });
     }
   }, [isLoggedIn]);
 
@@ -1232,7 +1239,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       let message = "Google Login failed: " + error.message;
       
       if (error.code === 'auth/popup-blocked') {
-        message = "Popup blocked! Please allow popups for this site in your browser settings.";
+        message = "Popup blocked! Please allow popups for this site in your browser settings (usually an icon in the address bar).";
       } else if (error.code === 'auth/cancelled-popup-request') {
         message = "Login was cancelled or another login request is already pending.";
       } else if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
@@ -1266,9 +1273,21 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
         if (!auth.currentUser) {
           try {
             await signInAnonymously(auth);
-          } catch (e) {
+          } catch (e: any) {
             console.error("Anonymous login for upload failed:", e);
+            if (e.code === 'auth/admin-restricted-operation') {
+              setToast("Upload failed: Anonymous login is disabled. Please log in with Google first.");
+              setUploading(false);
+              return;
+            }
           }
+        }
+
+        // Final check: if still not authenticated, storage will likely fail
+        if (!auth.currentUser) {
+          setToast("Upload failed: You must be logged in to upload files.");
+          setUploading(false);
+          return;
         }
 
         const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
@@ -1290,9 +1309,15 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
         }
         
         setToast("Image uploaded successfully!");
-      } catch (err) {
+      } catch (err: any) {
         console.error("Upload error:", err);
-        setToast("Failed to upload image. Please try again.");
+        if (err.code === 'storage/retry-limit-exceeded') {
+          setToast("Upload timed out. Please check your internet connection or Firebase Storage rules.");
+        } else if (err.code === 'storage/unauthorized') {
+          setToast("Upload failed: Permission denied. Please check your Firebase Storage rules.");
+        } else {
+          setToast("Failed to upload image. Please try again.");
+        }
       } finally {
         setUploading(false);
       }
