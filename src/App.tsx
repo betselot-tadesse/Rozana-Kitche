@@ -1259,6 +1259,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "menu" | "slider" | "feature" | "testimonial" | "about") => {
     const file = e.target.files?.[0];
+    console.log(`Starting upload for ${type}:`, file?.name, file?.size);
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         setToast("File too large! Please upload an image smaller than 5MB.");
@@ -1271,8 +1272,10 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       try {
         // Ensure we are authenticated before uploading
         if (!auth.currentUser) {
+          console.log("No current user, attempting anonymous login...");
           try {
             await signInAnonymously(auth);
+            console.log("Anonymous login successful");
           } catch (e: any) {
             console.error("Anonymous login for upload failed:", e);
             if (e.code === 'auth/admin-restricted-operation') {
@@ -1293,33 +1296,41 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
         const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
         const storageRef = ref(storage, `${type}/${fileName}`);
         
+        console.log(`Uploading to: ${type}/${fileName}`);
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
         
         if (type === "menu") {
-          setNewItem({ ...newItem, img: downloadURL });
+          setNewItem(prev => ({ ...prev, img: downloadURL }));
         } else if (type === "slider") {
-          setNewSlide({ ...newSlide, url: downloadURL });
+          setNewSlide(prev => ({ ...prev, url: downloadURL }));
         } else if (type === "feature") {
-          setNewFeature({ ...newFeature, img: downloadURL });
+          setNewFeature(prev => ({ ...prev, img: downloadURL }));
         } else if (type === "testimonial") {
-          setNewTestimonial({ ...newTestimonial, img: downloadURL });
+          setNewTestimonial(prev => ({ ...prev, img: downloadURL }));
         } else if (type === "about") {
-          setNewAbout({ ...newAbout, videoUrl: downloadURL });
+          setNewAbout(prev => ({ ...prev, videoUrl: downloadURL }));
         }
         
+        console.log(`Upload successful for ${type}:`, downloadURL);
         setToast("Image uploaded successfully!");
       } catch (err: any) {
-        console.error("Upload error:", err);
+        console.error(`Upload error for ${type}:`, err);
+        let errorMessage = "Failed to upload image. Please try again.";
+        
         if (err.code === 'storage/retry-limit-exceeded') {
-          setToast("Upload timed out. Please check your internet connection or Firebase Storage rules.");
+          errorMessage = "Upload timed out. Please check your internet connection or Firebase Storage rules.";
         } else if (err.code === 'storage/unauthorized') {
-          setToast("Upload failed: Permission denied. Please check your Firebase Storage rules.");
-        } else {
-          setToast("Failed to upload image. Please try again.");
+          errorMessage = "Upload failed: Permission denied. Make sure your Storage Rules allow authenticated writes.";
+        } else if (err.message) {
+          errorMessage = `Upload error: ${err.message}`;
         }
+        
+        setToast(errorMessage);
       } finally {
         setUploading(false);
+        // Reset the input so the same file can be selected again
+        e.target.value = "";
       }
     }
   };
@@ -1843,6 +1854,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
+                      <input ref={menuFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "menu")} />
                       <div 
                         onClick={() => !uploading && menuFileRef.current?.click()}
                         className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newItem.img ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
@@ -1865,7 +1877,6 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                             <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG)</p>
                           </>
                         )}
-                        <input ref={menuFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "menu")} />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -1937,6 +1948,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
+                      <input ref={sliderFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "slider")} />
                       <div 
                         onClick={() => !uploading && sliderFileRef.current?.click()}
                         className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newSlide.url ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
@@ -1959,7 +1971,6 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                             <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG)</p>
                           </>
                         )}
-                        <input ref={sliderFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "slider")} />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -2026,6 +2037,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
+                      <input ref={featureFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "feature")} />
                       <div 
                         onClick={() => !uploading && featureFileRef.current?.click()}
                         className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newFeature.img ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
@@ -2048,7 +2060,6 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                             <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG)</p>
                           </>
                         )}
-                        <input ref={featureFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "feature")} />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -2206,6 +2217,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.videoUpload || "Upload Image/Video"}</label>
+                      <input ref={aboutFileRef} type="file" accept="image/*,video/*" className="hidden" onChange={e => handleFileUpload(e, "about")} />
                       <div 
                         onClick={() => !uploading && aboutFileRef.current?.click()}
                         className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newAbout.videoUrl ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
@@ -2234,7 +2246,6 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                             <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG, MP4)</p>
                           </>
                         )}
-                        <input ref={aboutFileRef} type="file" accept="image/*,video/*" className="hidden" onChange={e => handleFileUpload(e, "about")} />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -2355,6 +2366,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload || "Image Upload"}</label>
+                      <input ref={testimonialFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "testimonial")} />
                       <div 
                         onClick={() => !uploading && testimonialFileRef.current?.click()}
                         className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newTestimonial.img ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
@@ -2377,7 +2389,6 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                             <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG)</p>
                           </>
                         )}
-                        <input ref={testimonialFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "testimonial")} />
                       </div>
                     </div>
                     <div className="space-y-2">
