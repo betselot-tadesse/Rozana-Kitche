@@ -4,11 +4,12 @@
  */
 
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, ChevronRight, ChevronDown, Star, Clock, Utensils, Heart, Quote, Mail, Phone, MapPin, Plus, Trash2, Edit2, LogIn, LogOut, Settings, Save, Image as ImageIcon, Share2, Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
+import { Menu, X, ChevronRight, ChevronDown, Star, Clock, Utensils, Heart, Quote, Mail, Phone, MapPin, Plus, Trash2, Edit2, LogIn, LogOut, Settings, Save, Image as ImageIcon, Share2, Facebook, Instagram, Twitter, Youtube, Linkedin, Upload, CheckCircle2 } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
-import { auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
+import { auth, db, storage, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, browserPopupRedirectResolver, GoogleAuthProvider,
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, addDoc, serverTimestamp,
+  ref, uploadBytes, getDownloadURL,
   handleFirestoreError, OperationType
 } from "./firebase";
 import { Language, translations } from "./translations";
@@ -513,6 +514,8 @@ const About = () => {
   const videoLabel = data?.label || t.about.videoLabel;
   const videoSub = data?.sub || t.about.videoSub;
 
+  const isVideo = videoUrl.includes('.mp4') || videoUrl.includes('.mov') || videoUrl.includes('vimeo') || videoUrl.includes('youtube');
+
   return (
     <section id="about" className="py-24 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
@@ -545,17 +548,26 @@ const About = () => {
           >
             <div className="absolute -inset-4 bg-brand-primary/10 rounded-[2rem] blur-2xl -z-10"></div>
             <div className="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white relative bg-brand-bg flex items-center justify-center">
-              <video 
-                autoPlay 
-                loop 
-                muted 
-                playsInline
-                key={videoUrl}
-                className="w-full h-full object-cover"
-                poster="https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=800&q=80"
-              >
-                <source src={videoUrl} type="video/mp4" />
-              </video>
+              {isVideo ? (
+                <video 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  key={videoUrl}
+                  className="w-full h-full object-cover"
+                  poster="https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=800&q=80"
+                >
+                  <source src={videoUrl} type="video/mp4" />
+                </video>
+              ) : (
+                <img 
+                  src={videoUrl} 
+                  className="w-full h-full object-cover" 
+                  alt="" 
+                  referrerPolicy="no-referrer"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
               <div className="absolute bottom-8 left-8 text-white">
                 <p className="text-sm font-bold uppercase tracking-widest mb-1">{videoLabel}</p>
@@ -1056,6 +1068,7 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
   });
   const [contactMessages, setContactMessages] = useState<any[]>([]); */
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
@@ -1111,6 +1124,14 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
   const sliderFileRef = useRef<HTMLInputElement>(null);
   const featureFileRef = useRef<HTMLInputElement>(null);
   const testimonialFileRef = useRef<HTMLInputElement>(null);
+  const aboutFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Sync Firebase Auth with local isLoggedIn state
+    if (isLoggedIn && !auth.currentUser) {
+      signInAnonymously(auth).catch(err => console.error("Auto anonymous login failed:", err));
+    }
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const unsubMenu = onSnapshot(query(collection(db, "menu"), orderBy("order", "asc")), (snap) => {
@@ -1182,24 +1203,45 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
     if (loginForm.username === "rozana" && (loginForm.password === "1061" || loginForm.password === "1234")) {
       setIsLoggedIn(true);
       setLoginError("");
-      setToast("Logged in successfully!");
+      setToast("Logged in locally. Note: For full database access, please use Google Login.");
     } else {
       setLoginError("Invalid username or password");
     }
   };
 
   const handleGoogleLogin = async () => {
+    if (loading) return;
+    
+    setLoading(true);
+    setLoginError("");
+    
     try {
-      setLoginError("");
-      const result = await signInWithPopup(auth, googleProvider);
+      // Create a new provider instance to avoid internal state issues
+      const provider = new GoogleAuthProvider();
+      
+      // Call signInWithPopup as early as possible to avoid popup blockers
+      const result = await signInWithPopup(auth, provider);
+      
       if (result.user) {
         setIsLoggedIn(true);
-        setLoginError("");
-        setToast("Logged in with Google!");
+        setToast(`Welcome, ${result.user.displayName || 'Admin'}!`);
       }
     } catch (error: any) {
       console.error("Google Login error:", error);
-      setLoginError("Google Login failed: " + error.message);
+      
+      let message = "Google Login failed: " + error.message;
+      
+      if (error.code === 'auth/popup-blocked') {
+        message = "Popup blocked! Please allow popups for this site in your browser settings.";
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        message = "Login was cancelled or another login request is already pending.";
+      } else if (error.message?.includes('INTERNAL ASSERTION FAILED')) {
+        message = "A temporary authentication error occurred. Please refresh the page and try again.";
+      }
+      
+      setLoginError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1208,27 +1250,52 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
     setIsLoggedIn(false);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "menu" | "slider" | "feature" | "testimonial") => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "menu" | "slider" | "feature" | "testimonial" | "about") => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 512 * 1024) {
-        setToast("File too large! Please upload an image smaller than 500KB.");
+      if (file.size > 5 * 1024 * 1024) {
+        setToast("File too large! Please upload an image smaller than 5MB.");
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        if (type === "menu") {
-          setNewItem({ ...newItem, img: base64String });
-        } else if (type === "slider") {
-          setNewSlide({ ...newSlide, url: base64String });
-        } else if (type === "feature") {
-          setNewFeature({ ...newFeature, img: base64String });
-        } else if (type === "testimonial") {
-          setNewTestimonial({ ...newTestimonial, img: base64String });
+      
+      setUploading(true);
+      setToast("Uploading image...");
+      
+      try {
+        // Ensure we are authenticated before uploading
+        if (!auth.currentUser) {
+          try {
+            await signInAnonymously(auth);
+          } catch (e) {
+            console.error("Anonymous login for upload failed:", e);
+          }
         }
-      };
-      reader.readAsDataURL(file);
+
+        const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+        const storageRef = ref(storage, `${type}/${fileName}`);
+        
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        if (type === "menu") {
+          setNewItem({ ...newItem, img: downloadURL });
+        } else if (type === "slider") {
+          setNewSlide({ ...newSlide, url: downloadURL });
+        } else if (type === "feature") {
+          setNewFeature({ ...newFeature, img: downloadURL });
+        } else if (type === "testimonial") {
+          setNewTestimonial({ ...newTestimonial, img: downloadURL });
+        } else if (type === "about") {
+          setNewAbout({ ...newAbout, videoUrl: downloadURL });
+        }
+        
+        setToast("Image uploaded successfully!");
+      } catch (err) {
+        console.error("Upload error:", err);
+        setToast("Failed to upload image. Please try again.");
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -1237,33 +1304,47 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
     setLoading(true);
     setSaveSuccess(false);
     try {
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.error("Late anonymous login failed:", e);
+        }
+      }
       // About is usually a single document or we update the first one
       const docId = aboutData.length > 0 ? aboutData[0].id : "main";
       await setDoc(doc(db, "about", docId), newAbout);
-      
+      if (aboutFileRef.current) aboutFileRef.current.value = "";
       setSaveSuccess(true);
       setToast("About section updated successfully!");
       setTimeout(() => {
         setSaveSuccess(false);
-        setLoading(false);
       }, 1500);
     } catch (err) {
       console.error(err);
-      setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "about");
       setToast("Error saving about section. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAddTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTestimonial.img && !editingId) {
-      setToast("Please upload an image first!");
+      setToast("Please provide an image URL or upload a file!");
       return;
     }
     setLoading(true);
     setSaveSuccess(false);
     try {
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.error("Late anonymous login failed:", e);
+        }
+      }
       if (editingId) {
         await updateDoc(doc(db, "testimonials", editingId), { ...newTestimonial, rating: Number(newTestimonial.rating), order: Number(newTestimonial.order) });
         setEditingId(null);
@@ -1276,25 +1357,32 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       setToast("Testimonial saved successfully!");
       setTimeout(() => {
         setSaveSuccess(false);
-        setLoading(false);
       }, 1500);
     } catch (err) {
       console.error(err);
-      setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "testimonials");
       setToast("Error saving testimonial. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAddMenuItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItem.img && !editingId) {
-      setToast("Please upload an image first!");
+      setToast("Please provide an image URL or upload a file!");
       return;
     }
     setLoading(true);
     setSaveSuccess(false);
     try {
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.error("Late anonymous login failed:", e);
+        }
+      }
       if (editingId) {
         await updateDoc(doc(db, "menu", editingId), { ...newItem, rating: Number(newItem.rating), order: Number(newItem.order) });
         setEditingId(null);
@@ -1307,13 +1395,13 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       setToast("Dish saved successfully!");
       setTimeout(() => {
         setSaveSuccess(false);
-        setLoading(false);
       }, 1500);
     } catch (err) { 
       console.error(err);
-      setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "menu");
       setToast("Error saving dish. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1321,12 +1409,19 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
     e.preventDefault();
     console.log("Attempting to save slide:", newSlide, "Editing ID:", editingId);
     if (!newSlide.url && !editingId) {
-      setToast("Please upload an image first!");
+      setToast("Please provide an image URL or upload a file!");
       return;
     }
     setLoading(true);
     setSaveSuccess(false);
     try {
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.error("Late anonymous login failed:", e);
+        }
+      }
       const slideData = { 
         url: newSlide.url, 
         order: Number(newSlide.order || 0) 
@@ -1347,13 +1442,13 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       console.log("Slide saved successfully!");
       setTimeout(() => {
         setSaveSuccess(false);
-        setLoading(false);
       }, 1500);
     } catch (err) { 
       console.error("Error in handleAddSlide:", err);
-      setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "slider");
       setToast("Error saving slide. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1390,12 +1485,19 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
   const handleAddFeature = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFeature.img && !editingId) {
-      setToast("Please upload an image first!");
+      setToast("Please provide an image URL or upload a file!");
       return;
     }
     setLoading(true);
     setSaveSuccess(false);
     try {
+      if (!auth.currentUser) {
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.error("Late anonymous login failed:", e);
+        }
+      }
       if (editingId) {
         await updateDoc(doc(db, "features", editingId), { ...newFeature, order: Number(newFeature.order) });
         setEditingId(null);
@@ -1408,13 +1510,13 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
       setToast("Feature saved successfully!");
       setTimeout(() => {
         setSaveSuccess(false);
-        setLoading(false);
       }, 1500);
     } catch (err) { 
       console.error(err);
-      setLoading(false);
       handleFirestoreError(err, OperationType.WRITE, "features");
       setToast("Error saving feature. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1573,12 +1675,26 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
           </div>
         </div>
 
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3 items-start">
+          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0 text-blue-600">
+            <Settings size={16} />
+          </div>
+          <p className="text-xs text-blue-700 leading-relaxed">
+            {t.admin.googleLoginRecommended}
+          </p>
+        </div>
+
         <button 
           onClick={handleGoogleLogin}
-          className="w-full bg-white border-2 border-gray-100 text-brand-dark py-5 rounded-2xl font-bold text-lg hover:border-brand-primary transition-all shadow-sm flex items-center justify-center gap-3"
+          disabled={loading}
+          className={`w-full bg-white border-2 border-gray-100 text-brand-dark py-5 rounded-2xl font-bold text-lg transition-all shadow-sm flex items-center justify-center gap-3 ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:border-brand-primary'}`}
         >
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
-          {t.admin.loginWithGoogle}
+          {loading ? (
+            <div className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
+          )}
+          {loading ? t.admin.saving : t.admin.loginWithGoogle}
         </button>
 
         <Link to="/" className="inline-block mt-8 text-sm font-bold text-brand-primary hover:underline uppercase tracking-widest">
@@ -1625,37 +1741,37 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
 
           <div className="flex border-b border-gray-100 bg-gray-50/50">
             <button 
-              onClick={() => setActiveTab("menu")}
+              onClick={() => handleTabChange("menu")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'menu' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
               {t.admin.foodMenu}
             </button>
             <button 
-              onClick={() => setActiveTab("slider")}
+              onClick={() => handleTabChange("slider")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'slider' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
               {t.admin.heroSlider}
             </button>
             <button 
-              onClick={() => setActiveTab("social")}
+              onClick={() => handleTabChange("social")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'social' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
               {t.admin.socialLinks}
             </button>
             <button 
-              onClick={() => setActiveTab("features")}
+              onClick={() => handleTabChange("features")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'features' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
               {t.admin.features}
             </button>
             <button 
-              onClick={() => setActiveTab("about")}
+              onClick={() => handleTabChange("about")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'about' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
               {t.admin.about || "About"}
             </button>
             <button 
-              onClick={() => setActiveTab("testimonials")}
+              onClick={() => handleTabChange("testimonials")}
               className={`flex-1 py-6 font-bold text-sm uppercase tracking-widest transition-all ${activeTab === 'testimonials' ? 'text-brand-primary border-b-4 border-brand-primary bg-white' : 'text-gray-400 hover:text-brand-dark'}`}
             >
               {t.admin.testimonials || "Testimonials"}
@@ -1702,8 +1818,34 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
-                      <input ref={menuFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "menu")} />
-                      {newItem.img && <p className="text-[10px] text-green-600 font-bold">{t.admin.imageReady}</p>}
+                      <div 
+                        onClick={() => !uploading && menuFileRef.current?.click()}
+                        className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newItem.img ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-sm font-bold text-brand-primary">Uploading...</p>
+                          </>
+                        ) : newItem.img ? (
+                          <>
+                            <img src={newItem.img} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-20" alt="" />
+                            <CheckCircle2 size={32} className="text-green-500 relative z-10" />
+                            <p className="text-sm font-bold text-green-600 relative z-10">{t.admin.imageReady}</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={32} className="text-gray-300" />
+                            <p className="text-sm font-medium text-gray-400">Click to upload image</p>
+                            <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG)</p>
+                          </>
+                        )}
+                        <input ref={menuFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "menu")} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUrl || "Image URL"}</label>
+                      <input placeholder={t.admin.urlPlaceholder} className="admin-input" value={newItem.img || ""} onChange={e => setNewItem({...newItem, img: e.target.value || ""})} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -1770,8 +1912,34 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
-                      <input ref={sliderFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "slider")} />
-                      {newSlide.url && <p className="text-[10px] text-green-600 font-bold">{t.admin.imageReady}</p>}
+                      <div 
+                        onClick={() => !uploading && sliderFileRef.current?.click()}
+                        className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newSlide.url ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-sm font-bold text-brand-primary">Uploading...</p>
+                          </>
+                        ) : newSlide.url ? (
+                          <>
+                            <img src={newSlide.url} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-20" alt="" />
+                            <CheckCircle2 size={32} className="text-green-500 relative z-10" />
+                            <p className="text-sm font-bold text-green-600 relative z-10">{t.admin.imageReady}</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={32} className="text-gray-300" />
+                            <p className="text-sm font-medium text-gray-400">Click to upload image</p>
+                            <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG)</p>
+                          </>
+                        )}
+                        <input ref={sliderFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "slider")} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUrl || "Image URL"}</label>
+                      <input placeholder={t.admin.urlPlaceholder} className="admin-input" value={newSlide.url || ""} onChange={e => setNewSlide({...newSlide, url: e.target.value || ""})} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.displayOrder}</label>
@@ -1833,8 +2001,34 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload}</label>
-                      <input ref={featureFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "feature")} />
-                      {newFeature.img && <p className="text-[10px] text-green-600 font-bold">{t.admin.imageReady}</p>}
+                      <div 
+                        onClick={() => !uploading && featureFileRef.current?.click()}
+                        className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newFeature.img ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-sm font-bold text-brand-primary">Uploading...</p>
+                          </>
+                        ) : newFeature.img ? (
+                          <>
+                            <img src={newFeature.img} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-20" alt="" />
+                            <CheckCircle2 size={32} className="text-green-500 relative z-10" />
+                            <p className="text-sm font-bold text-green-600 relative z-10">{t.admin.imageReady}</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={32} className="text-gray-300" />
+                            <p className="text-sm font-medium text-gray-400">Click to upload image</p>
+                            <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG)</p>
+                          </>
+                        )}
+                        <input ref={featureFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "feature")} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUrl || "Image URL"}</label>
+                      <input placeholder={t.admin.urlPlaceholder} className="admin-input" value={newFeature.img || ""} onChange={e => setNewFeature({...newFeature, img: e.target.value || ""})} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.order}</label>
@@ -1986,6 +2180,39 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                       <input className="admin-input" value={newAbout.videoUrl || ""} onChange={e => setNewAbout({...newAbout, videoUrl: e.target.value || ""})} />
                     </div>
                     <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.videoUpload || "Upload Image/Video"}</label>
+                      <div 
+                        onClick={() => !uploading && aboutFileRef.current?.click()}
+                        className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newAbout.videoUrl ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-sm font-bold text-brand-primary">Uploading...</p>
+                          </>
+                        ) : newAbout.videoUrl ? (
+                          <>
+                            {newAbout.videoUrl.includes('.mp4') || newAbout.videoUrl.includes('.mov') ? (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
+                                <ImageIcon size={32} className="text-white" />
+                              </div>
+                            ) : (
+                              <img src={newAbout.videoUrl} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-20" alt="" />
+                            )}
+                            <CheckCircle2 size={32} className="text-green-500 relative z-10" />
+                            <p className="text-sm font-bold text-green-600 relative z-10">{t.admin.imageReady}</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={32} className="text-gray-300" />
+                            <p className="text-sm font-medium text-gray-400">Click to upload image/video</p>
+                            <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG, MP4)</p>
+                          </>
+                        )}
+                        <input ref={aboutFileRef} type="file" accept="image/*,video/*" className="hidden" onChange={e => handleFileUpload(e, "about")} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.videoLabel || "Video Label"}</label>
                       <input className="admin-input" value={newAbout.label || ""} onChange={e => setNewAbout({...newAbout, label: e.target.value || ""})} />
                     </div>
@@ -2103,8 +2330,34 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUpload || "Image Upload"}</label>
-                      <input ref={testimonialFileRef} type="file" accept="image/*" className="admin-input" onChange={e => handleFileUpload(e, "testimonial")} />
-                      {newTestimonial.img && <p className="text-[10px] text-green-600 font-bold">{t.admin.imageReady}</p>}
+                      <div 
+                        onClick={() => !uploading && testimonialFileRef.current?.click()}
+                        className={`relative h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:bg-white/50 ${uploading ? 'border-brand-primary bg-brand-primary/5 cursor-wait' : newTestimonial.img ? 'border-green-500 bg-green-50/10' : 'border-gray-200 hover:border-brand-primary'}`}
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-sm font-bold text-brand-primary">Uploading...</p>
+                          </>
+                        ) : newTestimonial.img ? (
+                          <>
+                            <img src={newTestimonial.img} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-20" alt="" />
+                            <CheckCircle2 size={32} className="text-green-500 relative z-10" />
+                            <p className="text-sm font-bold text-green-600 relative z-10">{t.admin.imageReady}</p>
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={32} className="text-gray-300" />
+                            <p className="text-sm font-medium text-gray-400">Click to upload image</p>
+                            <p className="text-[10px] text-gray-300">Max 5MB (JPG, PNG)</p>
+                          </>
+                        )}
+                        <input ref={testimonialFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileUpload(e, "testimonial")} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.imageUrl || "Image URL"}</label>
+                      <input placeholder={t.admin.urlPlaceholder} className="admin-input" value={newTestimonial.img || ""} onChange={e => setNewTestimonial({...newTestimonial, img: e.target.value || ""})} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-wider text-gray-400">{t.admin.order || "Order"}</label>

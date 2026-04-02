@@ -167,8 +167,10 @@ export const translations = {
       imageReady: "✓ Image Ready",
       dishNamePlaceholder: "e.g. Chicken Biryani",
       pricePlaceholder: "e.g. AED 35",
+      imageUrl: "Image URL",
       descriptionPlaceholder: "Tell us about this dish...",
-      urlPlaceholder: "https://..."
+      urlPlaceholder: "https://...",
+      googleLoginRecommended: "Recommended: Use Google Login with thunderloop1@gmail.com or Shreshths23@gmail.com for full administrative access to the database."
     }
   },
   ar: {
@@ -336,8 +338,10 @@ export const translations = {
       imageReady: "✓ الصورة جاهزة",
       dishNamePlaceholder: "مثال: برياني دجاج",
       pricePlaceholder: "مثال: 35 درهم",
+      imageUrl: "رابط الصورة",
       descriptionPlaceholder: "أخبرنا عن هذا الطبق...",
-      urlPlaceholder: "https://..."
+      urlPlaceholder: "https://...",
+      googleLoginRecommended: "موصى به: استخدم تسجيل الدخول بجوجل مع thunderloop1@gmail.com أو Shreshths23@gmail.com للوصول الكامل للمسؤول إلى قاعدة البيانات."
     }
   },
   hi: {
@@ -505,8 +509,10 @@ export const translations = {
       imageReady: "✓ छवि तैयार है",
       dishNamePlaceholder: "जैसे: चिकन बिरयानी",
       pricePlaceholder: "जैसे: AED 35",
+      imageUrl: "छवि यूआरएल",
       descriptionPlaceholder: "हमें इस व्यंजन के बारे में बताएं...",
-      urlPlaceholder: "https://..."
+      urlPlaceholder: "https://...",
+      googleLoginRecommended: "अनुशंसित: डेटाबेस तक पूर्ण प्रशासनिक पहुंच के लिए thunderloop1@gmail.com या Shreshths23@gmail.com के साथ Google लॉगिन का उपयोग करें।"
     }
   },
   ur: {
@@ -674,8 +680,10 @@ export const translations = {
       imageReady: "✓ تصویر تیار ہے",
       dishNamePlaceholder: "مثال کے طور پر: چکن بریانی",
       pricePlaceholder: "مثال کے طور پر: AED 35",
+      imageUrl: "تصویر کا یو آر ایل",
       descriptionPlaceholder: "ہمیں اس ڈش کے بارے میں بتائیں...",
-      urlPlaceholder: "https://..."
+      urlPlaceholder: "https://...",
+      googleLoginRecommended: "تجویز کردہ: ڈیٹا بیس تک مکمل انتظامی رسائی کے لیے thunderloop1@gmail.com یا Shreshths23@gmail.com کے ساتھ گوگل لاگ ان استعمال کریں۔"
     }
   }
 };

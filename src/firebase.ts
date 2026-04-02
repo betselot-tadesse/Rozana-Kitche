@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged, browserPopupRedirectResolver } from 'firebase/auth';
 import { initializeFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocFromServer } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Import the Firebase configuration
 import firebaseConfig from '../firebase-applet-config.json';
@@ -19,6 +20,7 @@ export const db = initializeFirestore(app, {
 }, firebaseConfig.firestoreDatabaseId || '(default)');
 
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Test connection as per instructions
@@ -93,6 +95,8 @@ export {
   signInAnonymously,
   signOut, 
   onAuthStateChanged,
+  browserPopupRedirectResolver,
+  GoogleAuthProvider,
   collection, 
   doc, 
   getDoc, 
@@ -104,5 +108,8 @@ export {
   query, 
   orderBy, 
   addDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  ref,
+  uploadBytes,
+  getDownloadURL
 };
