@@ -238,7 +238,7 @@ const Hero = () => {
             {t.hero.subtitle}
           </p>
           <div className="flex flex-wrap gap-4">
-            <a href="#order" className="bg-white text-brand-dark px-8 py-4 rounded-full font-semibold flex items-center gap-2 hover:bg-brand-bg transition-all shadow-lg group">
+            <a href="https://url-eu.mykeeta.com/IdJN7hBz" target="_blank" rel="noopener noreferrer" className="bg-white text-brand-dark px-8 py-4 rounded-full font-semibold flex items-center gap-2 hover:bg-brand-bg transition-all shadow-lg group">
               {t.hero.orderBtn} <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </a>
             <a href="#menu" className="border-2 border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/10 transition-all">
@@ -479,9 +479,9 @@ const MenuSection = () => {
             <h2 className="text-4xl font-bold text-brand-dark mb-4">{t.menu.sectionTitle}</h2>
             <p className="text-gray-600 max-w-md">{t.menu.sectionSubtitle}</p>
           </div>
-          <button className="text-brand-primary font-semibold flex items-center gap-2 hover:underline">
+          <a href="https://url-eu.mykeeta.com/IdJN7hBz" target="_blank" rel="noopener noreferrer" className="text-brand-primary font-semibold flex items-center gap-2 hover:underline">
             {t.menu.viewFull} <ChevronRight size={18} />
-          </button>
+          </a>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -724,7 +724,9 @@ const CTA = () => {
             {t.cta.subtitle}
           </p>
           <a 
-            href="#" 
+            href="https://url-eu.mykeeta.com/IdJN7hBz" 
+            target="_blank" 
+            rel="noopener noreferrer"
             className="inline-block bg-white text-brand-dark px-8 py-4 rounded-full text-lg font-bold hover:bg-brand-bg transition-all shadow-xl hover:-translate-y-1 mb-12"
           >
             {t.cta.orderBtn}
