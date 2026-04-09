@@ -46,17 +46,25 @@ const Logo = ({ className = "", light = false }) => {
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { t } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+
+  const languages: { code: Language; label: string }[] = [
+    { code: 'en', label: 'EN' },
+    { code: 'ar', label: 'العربية' },
+    { code: 'hi', label: 'हिन्दी' },
+    { code: 'ur', label: 'اردو' }
+  ];
 
   const navLinks = isHomePage ? [
     { name: t.nav.menu, href: "#menu" },
     { name: t.nav.about, href: "#about" },
-    // { name: t.nav.contact, href: "#contact" },
+    { name: t.nav.faq, href: "/faq" },
     { name: t.nav.order, href: "#order", cta: true }
   ] : [
     { name: t.nav.home, href: "/" },
+    { name: t.nav.faq, href: "/faq" },
   ];
 
   return (
@@ -68,6 +76,23 @@ const Navbar = () => {
         
         {/* Desktop Links */}
         <div className="hidden md:flex items-center space-x-8">
+          {/* Language Switcher - Commented out for now
+          <div className="flex items-center gap-2 border-r border-black/10 pr-6 mr-2">
+            {languages.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                className={`text-xs font-bold px-2 py-1 rounded transition-all ${
+                  lang === l.code 
+                    ? 'bg-brand-dark text-white' 
+                    : 'text-gray-500 hover:text-brand-dark'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+          */}
 
           {navLinks.map((link) => (
             link.cta ? (
@@ -115,6 +140,27 @@ const Navbar = () => {
                 )
               )
             ))}
+
+            {/* Language Switcher (Mobile) - Commented out for now
+            <div className="pt-4 border-t border-black/5 flex flex-wrap gap-2">
+              {languages.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => {
+                    setLang(l.code);
+                    setIsOpen(false);
+                  }}
+                  className={`text-sm font-bold px-4 py-2 rounded-xl transition-all flex-grow ${
+                    lang === l.code 
+                      ? 'bg-brand-dark text-white' 
+                      : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            */}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1007,6 +1053,7 @@ const Footer = () => {
           <ul className="space-y-4">
             <li><a href="#menu" className="hover:text-white transition-colors">{t.nav.menu}</a></li>
             <li><a href="#about" className="hover:text-white transition-colors">{t.nav.about}</a></li>
+            <li><Link to="/faq" className="hover:text-white transition-colors">{t.nav.faq}</Link></li>
             <li><a href="#order" className="hover:text-white transition-colors">{t.nav.order}</a></li>
             {/* <li><a href="#" className="hover:text-white transition-colors">Contact</a></li> */}
           </ul>
@@ -2492,6 +2539,56 @@ const AdminPanel = ({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean, setIsL
   );
 };
 
+const FAQ = () => {
+  const { t } = useLanguage();
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  return (
+    <section className="pt-32 pb-20 bg-brand-bg min-h-screen">
+      <div className="max-w-3xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-5xl font-bold text-brand-dark mb-4">{t.faq.title}</h1>
+          <p className="text-gray-600">{t.faq.subtitle}</p>
+        </div>
+
+        <div className="space-y-4">
+          {t.faq.questions.map((item, index) => (
+            <div 
+              key={index}
+              className="bg-white rounded-2xl shadow-sm border border-black/5 overflow-hidden"
+            >
+              <button 
+                onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                className="w-full px-8 py-6 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="font-bold text-brand-dark text-lg">{item.q}</span>
+                <ChevronDown 
+                  size={20} 
+                  className={`text-brand-primary transition-transform duration-300 ${openIndex === index ? 'rotate-180' : ''}`} 
+                />
+              </button>
+              <AnimatePresence>
+                {openIndex === index && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="px-8 pb-6 text-gray-600 leading-relaxed">
+                      {item.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const HomePage = () => (
   <>
     <Hero />
@@ -2539,6 +2636,7 @@ export default function App() {
           
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/admin" element={<AdminPanel isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />} />
           </Routes>
         </main>

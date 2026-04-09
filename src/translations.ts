@@ -9,7 +9,8 @@ export const translations = {
       about: 'About',
       order: 'Order Now',
       home: 'Home',
-      contact: 'Contact'
+      contact: 'Contact',
+      faq: 'FAQ'
     },
     hero: {
       title: 'Ghar Jaisa Khana,',
@@ -171,6 +172,32 @@ export const translations = {
       descriptionPlaceholder: "Tell us about this dish...",
       urlPlaceholder: "https://...",
       googleLoginRecommended: "Recommended: Use Google Login with thunderloop1@gmail.com or Shreshths23@gmail.com for full administrative access to the database."
+    },
+    faq: {
+      title: 'Frequently Asked Questions',
+      subtitle: 'Everything you need to know about Rozana Kitchen.',
+      questions: [
+        {
+          q: 'What kind of food do you serve?',
+          a: 'We specialize in authentic North Indian home-style cooking, focusing on fresh ingredients and traditional recipes.'
+        },
+        {
+          q: 'Do you offer delivery?',
+          a: 'Yes! We are available on major delivery platforms like Keeta, and soon on Talabat, Noon Food, and Careem.'
+        },
+        {
+          q: 'Are your meals healthy?',
+          a: 'Absolutely. We use minimal oil and fresh ingredients, just like you would in your own home kitchen.'
+        },
+        {
+          q: 'Can I order for events?',
+          a: 'Yes, we handle bulk orders and catering. Please contact us directly for more information.'
+        },
+        {
+          q: 'What should I do if my delivery is delayed?',
+          a: 'Please contact us directly at 0569732183 for any delivery delays or issues.'
+        }
+      ]
     }
   },
   ar: {
@@ -180,7 +207,8 @@ export const translations = {
       about: 'حولنا',
       order: 'اطلب الآن',
       home: 'الرئيسية',
-      contact: 'اتصل بنا'
+      contact: 'اتصل بنا',
+      faq: 'الأسئلة الشائعة'
     },
     hero: {
       title: 'طعام مثل طعام البيت،',
@@ -342,6 +370,32 @@ export const translations = {
       descriptionPlaceholder: "أخبرنا عن هذا الطبق...",
       urlPlaceholder: "https://...",
       googleLoginRecommended: "موصى به: استخدم تسجيل الدخول بجوجل مع thunderloop1@gmail.com أو Shreshths23@gmail.com للوصول الكامل للمسؤول إلى قاعدة البيانات."
+    },
+    faq: {
+      title: 'الأسئلة الشائعة',
+      subtitle: 'كل ما تحتاج لمعرفته حول مطبخ روزانا.',
+      questions: [
+        {
+          q: 'ما نوع الطعام الذي تقدمونه؟',
+          a: 'نحن متخصصون في الطبخ المنزلي الأصيل لشمال الهند، مع التركيز على المكونات الطازجة والوصفات التقليدية.'
+        },
+        {
+          q: 'هل تقدمون خدمة التوصيل؟',
+          a: 'نعم! نحن متواجدون على منصات التوصيل الكبرى مثل Keeta، وقريباً على Talabat و Noon Food و Careem.'
+        },
+        {
+          q: 'هل وجباتكم صحية؟',
+          a: 'بالتأكيد. نحن نستخدم الحد الأدنى من الزيت والمكونات الطازجة، تماماً كما تفعل في مطبخ منزلك.'
+        },
+        {
+          q: 'هل يمكنني الطلب للمناسبات؟',
+          a: 'نعم، نحن نتعامل مع الطلبات الكبيرة والتموين. يرجى الاتصال بنا مباشرة لمزيد من المعلومات.'
+        },
+        {
+          q: 'ماذا أفعل إذا تأخر التوصيل؟',
+          a: 'يرجى الاتصال بنا مباشرة على الرقم 0569732183 لأي تأخير أو مشاكل في التوصيل.'
+        }
+      ]
     }
   },
   hi: {
@@ -351,7 +405,8 @@ export const translations = {
       about: 'हमारे बारे में',
       order: 'अभी ऑर्डर करें',
       home: 'होम',
-      contact: 'संपर्क'
+      contact: 'संपर्क',
+      faq: 'सामान्य प्रश्न'
     },
     hero: {
       title: 'घर जैसा खाना,',
@@ -513,6 +568,32 @@ export const translations = {
       descriptionPlaceholder: "हमें इस व्यंजन के बारे में बताएं...",
       urlPlaceholder: "https://...",
       googleLoginRecommended: "अनुशंसित: डेटाबेस तक पूर्ण प्रशासनिक पहुंच के लिए thunderloop1@gmail.com या Shreshths23@gmail.com के साथ Google लॉगिन का उपयोग करें।"
+    },
+    faq: {
+      title: 'सामान्य प्रश्न (FAQ)',
+      subtitle: 'रोज़ाना किचन के बारे में वह सब कुछ जो आपको जानना आवश्यक है।',
+      questions: [
+        {
+          q: 'आप किस तरह का खाना परोसते हैं?',
+          a: 'हम ताज़ा सामग्री और पारंपरिक व्यंजनों पर ध्यान केंद्रित करते हुए प्रामाणिक उत्तर भारतीय घरेलू शैली के खाना पकाने में विशेषज्ञ हैं।'
+        },
+        {
+          q: 'क्या आप डिलीवरी की सुविधा देते हैं?',
+          a: 'हाँ! हम कीटा (Keeta) जैसे प्रमुख डिलीवरी प्लेटफॉर्म पर उपलब्ध हैं, और जल्द ही तलबात (Talabat), नून फूड (Noon Food) और करीम (Careem) पर भी उपलब्ध होंगे।'
+        },
+        {
+          q: 'क्या आपका भोजन स्वास्थ्यवर्धक है?',
+          a: 'बिल्कुल। हम न्यूनतम तेल और ताज़ा सामग्री का उपयोग करते हैं, ठीक वैसे ही जैसे आप अपने घर की रसोई में करते हैं।'
+        },
+        {
+          q: 'क्या मैं कार्यक्रमों के लिए ऑर्डर दे सकता हूँ?',
+          a: 'हाँ, हम थोक ऑर्डर और खान-पान (catering) की व्यवस्था करते हैं। अधिक जानकारी के लिए कृपया हमसे सीधे संपर्क करें।'
+        },
+        {
+          q: 'अगर डिलीवरी में देरी हो तो मुझे क्या करना चाहिए?',
+          a: 'किसी भी डिलीवरी देरी या समस्या के लिए कृपया हमसे सीधे 0569732183 पर संपर्क करें।'
+        }
+      ]
     }
   },
   ur: {
@@ -522,7 +603,8 @@ export const translations = {
       about: 'ہمارے بارے میں',
       order: 'ابھی آرڈر کریں',
       home: 'ہوم',
-      contact: 'رابطہ'
+      contact: 'رابطہ',
+      faq: 'سوالات'
     },
     hero: {
       title: 'گھر جیسا کھانا،',
@@ -684,6 +766,32 @@ export const translations = {
       descriptionPlaceholder: "ہمیں اس ڈش کے بارے میں بتائیں...",
       urlPlaceholder: "https://...",
       googleLoginRecommended: "تجویز کردہ: ڈیٹا بیس تک مکمل انتظامی رسائی کے لیے thunderloop1@gmail.com یا Shreshths23@gmail.com کے ساتھ گوگل لاگ ان استعمال کریں۔"
+    },
+    faq: {
+      title: 'اکثر پوچھے گئے سوالات',
+      subtitle: 'روزانہ کچن کے بارے میں وہ سب کچھ جو آپ کو جاننے کی ضرورت ہے۔',
+      questions: [
+        {
+          q: 'آپ کس قسم کا کھانا پیش کرتے ہیں؟',
+          a: 'ہم تازہ اجزاء اور روایتی ترکیبوں پر توجہ مرکوز کرتے ہوئے مستند شمالی ہندوستانی گھریلو طرز کے کھانے میں مہارت رکھتے ہیں۔'
+        },
+        {
+          q: 'کیا آپ ڈیلیوری پیش کرتے ہیں؟',
+          a: 'جی ہاں! ہم کیٹا (Keeta) جیسے بڑے ڈیلیوری پلیٹ فارمز پر دستیاب ہیں، اور جلد ہی طلبات (Talabat)، نون فوڈ (Noon Food) اور کریم (Careem) پر بھی دستیاب ہوں گے۔'
+        },
+        {
+          q: 'کیا آپ کے کھانے صحت بخش ہیں؟',
+          a: 'بالکل۔ ہم کم سے کم تیل اور تازہ اجزاء استعمال کرتے ہیں، بالکل ویسے ہی جیسے آپ اپنے گھر کے کچن میں کرتے ہیں۔'
+        },
+        {
+          q: 'کیا میں تقریبات کے لیے آرڈر کر سکتا ہوں؟',
+          a: 'جی ہاں، ہم بلک آرڈرز اور کیٹرنگ سنبھالتے ہیں۔ مزید معلومات کے لیے براہ کرم ہم سے براہ راست رابطہ کریں۔'
+        },
+        {
+          q: 'اگر ڈیلیوری میں تاخیر ہو تو مجھے کیا کرنا چاہیے؟',
+          a: 'ڈیلیوری میں کسی بھی تاخیر یا مسائل کے لیے براہ کرم ہم سے براہ راست 0569732183 پر رابطہ کریں۔'
+        }
+      ]
     }
   }
 };
